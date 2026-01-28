@@ -3,21 +3,89 @@
 
 본 repository는 학습 데이터의 규모 및 난이도 변화에 대해 이미지 분류 모델이 얼마나 강건하게 성능을 유지하는지를 분석하기 위한 실험을 다룬다.
 
+### Hypotheses
+
+본 실험은 데이터 규모 및 난이도 변화에 대한 모델 강건성을 중심으로 다음 가설들을 설정하였다.
+
+**H1.** Pre-training은 데이터 규모 감소 환경에서 모델의 성능 저하를 완화하여 강건성을 향상시킨다.
+**H2.** Vision Transformer는 CNN보다 inductive bias가 약해, pre-training 없이 학습할 경우 저데이터 환경에서 더 취약하다.
+**H3.** Dataset 난이도(CIFAR-10 → CIFAR-100)가 증가할수록 ViT는 ResNet보다 성능 악화에 더 민감하다.
+
+----
+
+
+# Directory Structure
+
+
+```text
+CV
+├── README.md                     # 프로젝트 개요 및 실험 결과 정리
+├── requirements.txt              # Python 패키지
+│
+├── configs                       # 실험 설정 관리 (YAML)
+│   ├── default.yaml              # 공통 기본 설정
+│   │
+│   ├── dataset                   # 데이터셋 관련 설정
+│   │   ├── cifar10.yaml
+│   │   └── cifar100.yaml
+│   │
+│   ├── model                     # 모델 아키텍처 설정
+│   │   ├── resnet50_im1k.yaml
+│   │   ├── resnet50_scratch.yaml
+│   │   ├── vit_s16_im1k.yaml
+│   │   └── vit_s16_scratch.yaml
+│   │
+│   └── optimizer                 # Optimizer 설정
+│       └── adam.yaml
+│
+├── src                           # 핵심 로직 코드
+│   ├── data.py                   # 데이터 로딩 및 전처리
+│   ├── models.py                 # 모델 생성 (config 기반)
+│   ├── train_eval.py             # 학습 및 평가 루프
+│   ├── metrics.py                # metric 계산
+│   ├── utils.py                  # 공통 유틸리티
+│   └── wandb_utils.py            # Weights & Biases 로깅
+│
+├── main.py                       # 전체 실험 entry point
+├── run_scale_all.sh              # train fraction 실험 자동 실행
+└── run_cifar100_all.sh           # CIFAR-100 실험 자동 실행
+```
+
+----
+
+# How to Run
+**1. 라이브러리 설치**
+```text
+pip install -r requirements.txt
+```
+**2. WandB API key 설정:** Edit ```configs/default.yaml```
+```text
+wandb login [API_KEY]
+```
+**3. Run training jobs**
+- Train fraction 실험
+```text
+bash run_scale_all.sh
+```
+- CIFAR-100 실험
+```text
+bash run_cifar100_all.sh
+```
+
 ----
 
 # Dataset
 ## CIFAR-10
-
 CIFAR-10은 이미지 분류 분야에서 널리 사용되는 대표적인 벤치마크 데이터셋으로, 일상적인 사물 이미지를 10개의 클래스로 분류하는 문제로 구성되어 있다.
-- Total: 60k (Train 50k / Test 10k)
-- 클래스 수: 10
-- 이미지 크기: 32×32
+- **Total:** 60k (Train 50k / Test 10k)
+- **클래스 수:** 10
+- **이미지 크기:** 32×32
 → 상대적으로 난이도가 낮아 데이터 효율성 및 저데이터 강건성 분석에 적합
 
 ## CIFAR-100
-- Total: 60k (Train 50k / Test 10k)
-- 클래스 수: 100
-- 이미지 크기: 32×32
+- **Total:** 60k (Train 50k / Test 10k)
+- **클래스 수:** 100
+- **이미지 크기:** 32×32
 → 클래스 수 증가로 인해 dataset 난이도가 상승, 모델의 class complexity에 대한 강건성을 평가하기에 적합
 
 
@@ -147,3 +215,24 @@ Training 데이터에서 validation set을 분리할 때, 클래스 비율을 �
 - Dataset 난이도 증가 시 모든 모델의 성능이 악화됨
 - ResNet는 ViT보다 난이도 증가에 더 강건
 - Pretraining은 두 모델 모두에서 난이도 증가에 따른 성능 악화를 완화
+
+----
+
+# Conclusions (Hypothesis Verification)
+
+실험 결과를 통해 위 가설들은 다음과 같이 검증되었다.
+
+- **H1 검증**
+  - Pretrained 모델은 모든 train fraction에서 scratch 모델보다 낮은 error를 기록했으며, 데이터가 줄어들수록 성능 격차가 확대되었다. 이는 pre-training이 데이터 감소에 대한 강건성을 실질적으로 향상시킴을 보여준다.
+
+- **H2 검증**
+  - ViT는 scratch 상태에서 저데이터 환경에서 급격한 성능 저하를 보였으나, pre-training 적용 시 성능이 크게 회복되었다. 이는 ViT가 구조적으로 pre-training에 강하게 의존함을 확인한다.
+
+- **H3 검증**
+  - CIFAR-10 대비 CIFAR-100에서 ViT의 성능 악화 폭이 ResNet보다 더 크게 나타났으며, 이는 class complexity 증가에 대한 민감도가 ViT에서 더 큼을 의미한다.
+
+----
+
+> 데이터 규모 감소 및 dataset 난이도 증가 환경에서는 ResNet이 전반적으로 더 안정적인 강건성을 유지함을 확인하였다.
+그러나 pre-training을 적용한 ViT는 전체 학습 데이터의 10%만으로도 scratch 상태의 ResNet(100%)을 능가하는 성능을 보였다.
+이는 pre-training이 아키텍처 차이를 넘어 모델 강건성을 좌우하는 핵심 요인임을 명확히 보여준다.
