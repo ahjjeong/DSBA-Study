@@ -7,7 +7,7 @@
 ----
 
 # Dataset
-### **CIFAR-10**
+## **CIFAR-10**
 
 CIFAR-10은 이미지 분류 분야에서 널리 사용되는 대표적인 벤치마크 데이터셋으로, 일상적인 사물 이미지를 10개의 클래스로 분류하는 문제로 구성되어 있다.
 - **Total:** 60k
@@ -23,12 +23,12 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 # Model
 본 실험에서는 서로 다른 구조적 특성을 가진 두 가지 vision 모델을 선정하고, 각각에 대해 pretraining 여부에 따른 성능 차이를 함께 비교한다.
 
-### 사용한 아키텍처
+## 사용한 아키텍처
 - ResNet50
 - ViT-S/16 (Vision Transformer, Patch Size 16)
 
 
-### 모델 구성 (총 4가지)
+## 모델 구성 (총 4가지)
 | Model     | Architecture | Pre-trained |
 |-----------|--------------|-------------|
 | ResNet50  | CNN          | No (Scratch) |
@@ -41,7 +41,7 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 ----
 
 # Setup
-### 데이터 및 학습 설정
+## 데이터 및 학습 설정
 - **데이터셋:** CIFAR-10
 - **입력 이미지 크기:** 224 × 224
 - **학습 epoch 수:** 20
@@ -49,7 +49,7 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 - **손실 함수:** Cross Entropy Loss
 
 
-### Optimizer 설정
+## Optimizer 설정
 - **Optimizer:** Adam
 - **Learning Rate:** 0.001
 - **Learning Rate Scheduler:** Cosine Annealing
@@ -58,12 +58,12 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 - **Weight Decay:** 1e-4
 
 
-### Train / Validation Split 방식
+## Train / Validation Split 방식
 
 Training 데이터에서 validation set을 분리할 때, 클래스 비율을 유지하기 위해 **stratified split** 방식을 적용한다. 이를 통해 training set과 validation set이 **각 클래스에 대해 유사한 분포**를 가지도록 보장하며, 데이터 분할로 인한 성능 편차를 최소화한다.
 
 
-### Training Data Subsampling
+## Training Data Subsampling
 
 학습 데이터 크기 변화 실험을 위해, training set에 대해 **사용 비율(train fraction)을 조절하는 방식의 subsampling**을 수행한다.
 
@@ -87,7 +87,7 @@ Training 데이터에서 validation set을 분리할 때, 클래스 비율을 �
 ----
 
 # Experiments
-### 실험 목적
+## 실험 목적
 본 실험에서는 학습 데이터의 크기가 증가함에 따라 모델 성능이 어떻게 변화하는지를 분석하고자 한다.
 특히 다음과 같은 관점에서 비교를 수행한다.
 
@@ -110,8 +110,8 @@ ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인
 를 분석하기에 적합한 설정이다.
 
 
-### 실험 결과
-#### 1. Pretraining 효과 확인
+## 실험 결과
+### 1. Pretraining 효과 확인
 <div align="center">
   <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/c6356152-772c-44c1-9745-305f290da22f" />
   <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/d027e12d-1e8a-4e3d-83ec-b75289e6a162" />
@@ -128,3 +128,34 @@ ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인
 - Train fraction이 감소할수록 pretrained 모델과 scratch 모델 간 성능 격차가 확대됨
 - 특히 소량 데이터 구간(0.2, 0.1)에서 pretraining 여부가 성능을 결정하는 주요 요인으로 작용함
 - Pretrained 모델은 데이터 감소에도 error 증가 폭이 상대적으로 작음
+
+### 2. Train fraction 변화에 따른 sensitivity 분석
+<img width="80%" height="1440" alt="image" src="https://github.com/user-attachments/assets/ca173e7c-9bf1-40e2-ad8c-39791db27111" />
+
+#### 색의 의미
+- 값 = ΔError = Error(f) − Error(1.0)
+- 밝을수록 → 데이터를 줄였을 때 성능이 더 많이 악화됨
+- 1.0 열이 모두 0인 건 정의상 정상
+
+#### Scratch vs Pretrained
+- **Scratch 모델**
+  - train fraction이 줄어들수록 ΔError가 급격히 증가
+  - 특히 0.2 → 0.1 구간에서 큰 폭으로 악화
+  - ViT scratch와 ResNet scratch 모두 밝은 색으로 변함
+- **Pretrained 모델**
+  - 전반적으로 ΔError가 작음
+  - train fraction이 감소해도 색 변화가 완만함
+  - 0.1에서도 상대적으로 낮은 ΔError 유지
+
+#### 모델 간 비교
+- **Scratch 상태**
+  - ViT scratch와 ResNet scratch 모두 데이터 감소에 크게 민감
+  - ViT scratch가 전반적으로 더 높은 ΔError를 보임
+- **Pretrained 상태**
+  - ViT pretrained와 ResNet pretrained의 ΔError 크기가 비슷
+  - 두 모델 모두 데이터 감소에 대한 민감도가 낮음
+
+#### 결론
+- Train fraction 감소에 따른 성능 악화는 pretraining 여부에 의해 강하게 구분됨
+- Scratch 모델은 데이터 감소에 따라 누적적인 성능 손실이 크게 발생
+- Pretrained 모델은 데이터 감소에도 Top-1 error 증가가 제한적
