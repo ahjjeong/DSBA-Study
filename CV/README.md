@@ -128,9 +128,10 @@ ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인
 - Pretrained 모델은 항상 Scratch 모델보다 낮은 error를 기록
 - 데이터가 적을수록 pretraining에 따른 성능 개선 폭이 커짐
 - Pretraining 효과는 ViT에서 훨씬 크게 나타남
+- 특히 pretrained ViT는 데이터 10%만으로도 scratch ResNet(100%)보다 낮은 Top-1 error를 기록함
 
 
-### 2. Train fraction 변화에 따른 sensitivity 분석
+### 2. Train fraction 변화에 따른 민감도 분석
 <div align="center">
 <img width="80%" height="1380" alt="image" src="https://github.com/user-attachments/assets/3bab8366-6f09-41cd-ba28-35b8bd10332e" />
 </div>
