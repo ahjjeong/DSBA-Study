@@ -56,6 +56,27 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 - **Epsilon:** 1e-8
 - **Weight Decay:** 1e-4
 
+### Train / Validation Split 방식
+
+Training 데이터에서 validation set을 분리할 때,  
+클래스 비율을 유지하기 위해 **stratified split** 방식을 적용한다.
+
+Stratified split을 사용함으로써,  
+training set과 validation set이 **각 클래스에 대해 유사한 분포**를 가지도록 보장하며,  
+데이터 분할로 인한 성능 편차를 최소화한다.
+
+### Training Data Subsampling
+
+학습 데이터 크기 변화 실험을 위해,  
+training set에 대해 **사용 비율(train fraction)을 조절하는 방식의 subsampling**을 수행한다.
+
+- 지정된 train fraction에 따라 training data를 부분적으로 사용
+- Subsampling 과정에서도 **stratified sampling**을 적용하여  
+  각 클래스의 비율이 유지되도록 한다
+
+이를 통해 학습 데이터의 절대적인 양이 줄어들더라도,  
+데이터 분포 왜곡 없이 모델의 데이터 효율성을 비교할 수 있도록 설계하였다.
+
 ----
 
 # Metrics
