@@ -112,21 +112,29 @@ ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인
 
 ## 실험 결과
 ### 1. Pretraining 효과 확인
-<div align="center">
-  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/c6356152-772c-44c1-9745-305f290da22f" />
-  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/d027e12d-1e8a-4e3d-83ec-b75289e6a162" />
-</div>
+|   Model  | Train Fraction | Scratch | Pretrained | Δ (Pretrained-Scratch) |
+| :------: | :------------: | :-----: | :--------: | :--------------------: |
+| ResNet50 |      1.0       |  0.104  |   0.039    |      **−6.50%**        |
+| ResNet50 |      0.5       |  0.149  |   0.043    |     **−10.62%**        |
+| ResNet50 |      0.2       |  0.256  |   0.050    |     **−20.61%**        |
+| ResNet50 |      0.1       |  0.341  |   0.067    |     **−27.46%**        |
+| ViT-S/16 |      1.0       |  0.320  |   0.066    |     **−25.43%**        |
+| ViT-S/16 |      0.5       |  0.373  |   0.072    |     **−30.08%**        |
+| ViT-S/16 |      0.2       |  0.472  |   0.091    |     **−38.05%**        |
+| ViT-S/16 |      0.1       |  0.545  |   0.093    |     **−45.19%**        |
 
-<div align="center">
-  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/86fcbcf8-409e-45ae-859c-b7aa726decfb" />
-  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/a6d783e5-fd72-4574-a624-c435121292f9" />
-</div>
+*Note. Δ(Pretrained–Scratch)는 Top-1 error의 절대 감소량 × 100을 의미함*
 
-- Pretraining 적용 시, ResNet과 ViT 모두에서 Top-1 / Top-5 error가 전반적으로 감소함
-- 동일한 train fraction에서 pretrained 모델은 항상 scratch 모델보다 낮은 error를 기록함
+- Pretrained 모델은 항상 Scratch 모델보다 낮은 error를 기록
+- 데이터가 적을수록 pretraining에 따른 성능 개선 폭이 커짐
 - Pretraining 효과는 ViT에서 훨씬 크게 나타남
-- Train fraction이 감소할수록 pretrained 모델과 scratch 모델 간 성능 격차가 확대됨
-- 특히 소량 데이터 구간(0.2, 0.1)에서 pretraining 여부가 성능을 결정하는 주요 요인으로 작용함
-- Pretrained 모델은 데이터 감소에도 error 증가 폭이 상대적으로 작음
+
 
 ### 2. Train fraction 변화에 따른 sensitivity 분석
+<div align="center">
+<img width="80%" height="1380" alt="image" src="https://github.com/user-attachments/assets/3bab8366-6f09-41cd-ba28-35b8bd10332e" />
+</div>
+
+- Pretraining 여부가 데이터 감소에 따른 성능 변화(민감도)를 가장 크게 좌우함
+- Pretrained 모델은 train fraction이 줄어도 성능 저하(ΔError)가 작아 안정적임
+- 모델 구조(ResNet vs ViT)에 따른 민감도 차이는 상대적으로 작음
