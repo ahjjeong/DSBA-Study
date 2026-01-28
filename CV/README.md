@@ -130,8 +130,3 @@ ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인
 - Pretrained 모델은 데이터 감소에도 error 증가 폭이 상대적으로 작음
 
 ### 2. Train fraction 변화에 따른 sensitivity 분석
-
-#### 결론
-- Train fraction 감소에 따른 성능 악화는 pretraining 여부에 의해 강하게 구분됨
-- Scratch 모델은 데이터 감소에 따라 누적적인 성능 손실이 크게 발생
-- Pretrained 모델은 데이터 감소에도 Top-1 error 증가가 제한적
