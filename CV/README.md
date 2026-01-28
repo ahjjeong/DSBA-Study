@@ -111,4 +111,8 @@ ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인
 
 
 ### 실험 결과
-1. 
+<div align="center">
+  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/e75b00cf-f36d-41a6-b48a-30417d411a9c" />
+  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/ee26e4d6-f7a4-4952-ab6c-32ecdcf08a88" />
+</div>
+
