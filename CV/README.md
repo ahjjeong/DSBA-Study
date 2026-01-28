@@ -107,7 +107,7 @@ CIFAR-10은 이미지 분류 분야에서 널리 사용되는 대표적인 벤�
 
 ## 모델 구성 (총 4가지)
 | Model     | Architecture | Pre-trained |
-|-----------|--------------|-------------|
+|:---------:|:------------:|-------------|
 | ResNet50  | CNN          | No (Scratch) |
 | ResNet50  | CNN          | Yes (ImageNet-1k) |
 | ViT-S/16  | Transformer  | No (Scratch) |
