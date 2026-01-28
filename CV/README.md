@@ -21,12 +21,12 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 ----
 
 # Model
-본 실험에서는 서로 다른 구조적 특성을 가진 두 가지 vision 모델을 선정하고,
-각각에 대해 pretraining 여부에 따른 성능 차이를 함께 비교한다.
+본 실험에서는 서로 다른 구조적 특성을 가진 두 가지 vision 모델을 선정하고, 각각에 대해 pretraining 여부에 따른 성능 차이를 함께 비교한다.
 
 ### 사용한 아키텍처
 - ResNet50
 - ViT-S/16 (Vision Transformer, Patch Size 16)
+
 
 ### 모델 구성 (총 4가지)
 | Model     | Architecture | Pre-trained |
@@ -48,6 +48,7 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 - **배치 크기:** 64
 - **손실 함수:** Cross Entropy Loss
 
+
 ### Optimizer 설정
 - **Optimizer:** Adam
 - **Learning Rate:** 0.001
@@ -56,26 +57,22 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 - **Epsilon:** 1e-8
 - **Weight Decay:** 1e-4
 
+
 ### Train / Validation Split 방식
 
-Training 데이터에서 validation set을 분리할 때,  
-클래스 비율을 유지하기 위해 **stratified split** 방식을 적용한다.
+Training 데이터에서 validation set을 분리할 때, 클래스 비율을 유지하기 위해 **stratified split** 방식을 적용한다. 이를 통해 training set과 validation set이 **각 클래스에 대해 유사한 분포**를 가지도록 보장하며, 데이터 분할로 인한 성능 편차를 최소화한다.
 
-Stratified split을 사용함으로써,  
-training set과 validation set이 **각 클래스에 대해 유사한 분포**를 가지도록 보장하며,  
-데이터 분할로 인한 성능 편차를 최소화한다.
 
 ### Training Data Subsampling
 
-학습 데이터 크기 변화 실험을 위해,  
-training set에 대해 **사용 비율(train fraction)을 조절하는 방식의 subsampling**을 수행한다.
+학습 데이터 크기 변화 실험을 위해, training set에 대해 **사용 비율(train fraction)을 조절하는 방식의 subsampling**을 수행한다.
 
 - 지정된 train fraction에 따라 training data를 부분적으로 사용
-- Subsampling 과정에서도 **stratified sampling**을 적용하여  
-  각 클래스의 비율이 유지되도록 한다
+- Subsampling 과정에서도 **stratified sampling**을 적용  
 
-이를 통해 학습 데이터의 절대적인 양이 줄어들더라도,  
-데이터 분포 왜곡 없이 모델의 데이터 효율성을 비교할 수 있도록 설계하였다.
+하여 각 클래스의 비율이 유지되도록 한다
+
+이를 통해 학습 데이터의 절대적인 양이 줄어들더라도, 데이터 분포 왜곡 없이 모델의 데이터 효율성을 비교할 수 있도록 설계하였다.
 
 ----
 
@@ -96,22 +93,19 @@ training set에 대해 **사용 비율(train fraction)을 조절하는 방식의
 
 **1. CNN과 Vision Transformer의 특성 비교**
 
-CNN 기반 모델은 locality과 translation equivariance와 같은 강한 inductive bias를 가지고 있어,
-상대적으로 적은 데이터에서도 안정적인 학습이 가능하다.
+CNN 기반 모델은 locality과 translation equivariance와 같은 강한 inductive bias를 가지고 있어, 상대적으로 적은 데이터에서도 안정적인 학습이 가능하다.
 
-반면 Vision Transformer는 이러한 inductive bias가 약한 대신,
-충분한 데이터가 주어질 경우 더 높은 표현력을 발휘하는 경향이 있다.
+반면 Vision Transformer는 이러한 inductive bias가 약한 대신, 충분한 데이터가 주어질 경우 더 높은 표현력을 발휘하는 경향이 있다.
 
 **2. Pre-training의 효과 분석**
 
-ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인 시각적 표현을 제공하여,
-소규모 데이터셋에서도 성능 향상 및 빠른 수렴을 가능하게 한다.
+ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인 시각적 표현을 제공하여, 소규모 데이터셋에서도 성능 향상 및 빠른 수렴을 가능하게 한다.
 
 특히 Vision Transformer는 사전학습 여부에 따라 데이터 효율성 차이가 크게 나타날 가능성이 있다.
 
 **3. 학습 데이터 크기 변화 실험의 적합성**
 
-학습 데이터의 사용 비율을 점진적으로 변화시키는 방식은,
+학습 데이터의 사용 비율을 점진적으로 변화시키는 방식은
 
 - 모델의 data efficiency
 - pre-training이 저데이터 환경에서 얼마나 효과적인지
