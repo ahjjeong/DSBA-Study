@@ -111,8 +111,20 @@ ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인
 
 
 ### 실험 결과
+#### 1. Pretraining 효과 확인
 <div align="center">
-  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/e75b00cf-f36d-41a6-b48a-30417d411a9c" />
-  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/ee26e4d6-f7a4-4952-ab6c-32ecdcf08a88" />
+  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/c6356152-772c-44c1-9745-305f290da22f" />
+  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/d027e12d-1e8a-4e3d-83ec-b75289e6a162" />
 </div>
 
+<div align="center">
+  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/86fcbcf8-409e-45ae-859c-b7aa726decfb" />
+  <img width="45%" height="1380" alt="image" src="https://github.com/user-attachments/assets/a6d783e5-fd72-4574-a624-c435121292f9" />
+</div>
+
+- Pretraining 적용 시, ResNet과 ViT 모두에서 Top-1 / Top-5 error가 전반적으로 감소함
+- 동일한 train fraction에서 pretrained 모델은 항상 scratch 모델보다 낮은 error를 기록함
+- Pretraining 효과는 ViT에서 훨씬 크게 나타남
+- Train fraction이 감소할수록 pretrained 모델과 scratch 모델 간 성능 격차가 확대됨
+- 특히 소량 데이터 구간(0.2, 0.1)에서 pretraining 여부가 성능을 결정하는 주요 요인으로 작용함
+- Pretrained 모델은 데이터 감소에도 error 증가 폭이 상대적으로 작음
