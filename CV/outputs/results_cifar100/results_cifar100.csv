@@ -1,0 +1,2 @@
+dataset,model,pretrained,train_fraction,train_size,best_val_acc,test_acc,test_top1_err,test_top5_err
+cifar100,vit_small_patch16_224,1,1.0,45000,0.7728,0.7726,0.22740000000000005,0.0524
