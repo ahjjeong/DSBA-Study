@@ -7,11 +7,11 @@
 
 본 실험은 데이터 규모 및 난이도 변화에 대한 모델 강건성을 중심으로 다음 가설들을 설정하였다.
 
-**H1.** Pre-training은 데이터 규모 감소 환경에서 모델의 성능 저하를 완화하여 강건성을 향상시킨다.
+- **H1.** Pre-training은 데이터 규모 감소 환경에서 모델의 성능 저하를 완화하여 강건성을 향상시킨다.
 
-**H2.** Vision Transformer는 CNN보다 inductive bias가 약해, pre-training 없이 학습할 경우 저데이터 환경에서 더 취약하다.
+- **H2.** Vision Transformer는 CNN보다 inductive bias가 약해, pre-training 없이 학습할 경우 저데이터 환경에서 더 취약하다.
 
-**H3.** Dataset 난이도(CIFAR-10 → CIFAR-100)가 증가할수록 ViT는 ResNet보다 성능 악화에 더 민감하다.
+- **H3.** Dataset 난이도(CIFAR-10 → CIFAR-100)가 증가할수록 ViT는 ResNet보다 성능 악화에 더 민감하다.
 
 ----
 
