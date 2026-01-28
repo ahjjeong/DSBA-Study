@@ -63,6 +63,7 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 - Accuracy (Top-1)
 - Top-1 Error (=1-Accuracy)
 - Top-5 Error
+
 이때 Top-5 Error는 모델이 예측한 상위 5개 클래스 중 정답이 포함되지 않은 비율을 의미한다.
 
 ----
