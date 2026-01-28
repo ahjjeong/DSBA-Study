@@ -27,11 +27,11 @@ CIFAR-10은 이미지 분류 분야에서 널리 사용되는 대표적인 벤�
 본 실험에서는 서로 다른 구조적 특성을 가진 두 가지 vision 모델을 선정하고, 각각에 대해 pretraining 여부에 따른 성능 차이를 함께 비교한다.
 
 ## 사용한 아키텍처
-- ResNet50 (CNN)
+- **ResNet50 (CNN)**
   - 강한 locality 및 translation equivariance
   - 저해상도·고난이도 환경에서 상대적으로 안정적인 학습 특성
 
-- ViT-S/16 (Transformer)
+- **ViT-S/16 (Transformer)**
   - 약한 inductive bias, global attention 기반
   - pre-training 의존도가 높은 구조
 
