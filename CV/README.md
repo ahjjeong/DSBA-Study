@@ -130,30 +130,6 @@ ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인
 - Pretrained 모델은 데이터 감소에도 error 증가 폭이 상대적으로 작음
 
 ### 2. Train fraction 변화에 따른 sensitivity 분석
-<img width="80%" height="1440" alt="image" src="https://github.com/user-attachments/assets/ca173e7c-9bf1-40e2-ad8c-39791db27111" />
-
-#### 색의 의미
-- 값 = ΔError = Error(f) − Error(1.0)
-- 밝을수록 → 데이터를 줄였을 때 성능이 더 많이 악화됨
-- 1.0 열이 모두 0인 건 정의상 정상
-
-#### Scratch vs Pretrained
-- **Scratch 모델**
-  - train fraction이 줄어들수록 ΔError가 급격히 증가
-  - 특히 0.2 → 0.1 구간에서 큰 폭으로 악화
-  - ViT scratch와 ResNet scratch 모두 밝은 색으로 변함
-- **Pretrained 모델**
-  - 전반적으로 ΔError가 작음
-  - train fraction이 감소해도 색 변화가 완만함
-  - 0.1에서도 상대적으로 낮은 ΔError 유지
-
-#### 모델 간 비교
-- **Scratch 상태**
-  - ViT scratch와 ResNet scratch 모두 데이터 감소에 크게 민감
-  - ViT scratch가 전반적으로 더 높은 ΔError를 보임
-- **Pretrained 상태**
-  - ViT pretrained와 ResNet pretrained의 ΔError 크기가 비슷
-  - 두 모델 모두 데이터 감소에 대한 민감도가 낮음
 
 #### 결론
 - Train fraction 감소에 따른 성능 악화는 pretraining 여부에 의해 강하게 구분됨
