@@ -1,22 +1,25 @@
 # Image Classification Coding Task
-### **CIFAR-10 기반 이미지 분류 실험**
+### **CIFAR 기반 이미지 분류 실험**
 
-본 repository는 학습 데이터 크기 변화에 따른 모델 성능 변화를 분석하기 위한 이미지 분류 실험을 다룬다.
-특히 CNN 기반 모델과 Transformer 기반 모델의 특성 차이, 그리고 pre-training의 효과를 비교·분석하는 것을 목표로 한다.
+본 repository는 학습 데이터의 규모 및 난이도 변화에 대해 이미지 분류 모델이 얼마나 강건하게 성능을 유지하는지를 분석하기 위한 실험을 다룬다.
 
 ----
 
 # Dataset
-## **CIFAR-10**
+## CIFAR-10
 
 CIFAR-10은 이미지 분류 분야에서 널리 사용되는 대표적인 벤치마크 데이터셋으로, 일상적인 사물 이미지를 10개의 클래스로 분류하는 문제로 구성되어 있다.
-- **Total:** 60k
-- **Train:** 50k
-- **Test:** 10k
-- **클래스 수**: 10개 (Airplane, Automobile, Bird, Cat, Deer, Dog, Frog, Horse, Ship, Truck)
-- **이미지 크기:** 32×32
+- Total: 60k (Train 50k / Test 10k)
+- 클래스 수: 10
+- 이미지 크기: 32×32
+→ 상대적으로 난이도가 낮아 데이터 효율성 및 저데이터 강건성 분석에 적합
 
-CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡혀 있어, 모델의 데이터 효율성 및 일반화 성능을 비교하는 실험에 적합한 데이터셋이다.
+## CIFAR-100
+- Total: 60k (Train 50k / Test 10k)
+- 클래스 수: 100
+- 이미지 크기: 32×32
+→ 클래스 수 증가로 인해 dataset 난이도가 상승, 모델의 class complexity에 대한 강건성을 평가하기에 적합
+
 
 ----
 
@@ -24,9 +27,13 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 본 실험에서는 서로 다른 구조적 특성을 가진 두 가지 vision 모델을 선정하고, 각각에 대해 pretraining 여부에 따른 성능 차이를 함께 비교한다.
 
 ## 사용한 아키텍처
-- ResNet50
-- ViT-S/16 (Vision Transformer, Patch Size 16)
+- ResNet50 (CNN)
+  - 강한 locality 및 translation equivariance
+  - 저해상도·고난이도 환경에서 상대적으로 안정적인 학습 특성
 
+- ViT-S/16 (Transformer)
+  - 약한 inductive bias, global attention 기반
+  - pre-training 의존도가 높은 구조
 
 ## 모델 구성 (총 4가지)
 | Model     | Architecture | Pre-trained |
@@ -42,7 +49,7 @@ CIFAR-10은 데이터 규모가 비교적 작고 클래스 분포가 균형 잡�
 
 # Setup
 ## 데이터 및 학습 설정
-- **데이터셋:** CIFAR-10
+- **데이터셋:** CIFAR-10, CIFAR-100
 - **입력 이미지 크기:** 224 × 224
 - **학습 epoch 수:** 20
 - **배치 크기:** 64
@@ -88,30 +95,20 @@ Training 데이터에서 validation set을 분리할 때, 클래스 비율을 �
 
 # Experiments
 ## 실험 목적
-본 실험에서는 학습 데이터의 크기가 증가함에 따라 모델 성능이 어떻게 변화하는지를 분석하고자 한다.
-특히 다음과 같은 관점에서 비교를 수행한다.
+본 실험은 다음 세 가지 강건성 관점에서 설계되었다.
 
-**1. CNN과 Vision Transformer의 특성 비교**
+1. 데이터 규모 감소에 대한 강건성
+- 학습 데이터 비율(train fraction)을 줄였을 때 성능이 얼마나 안정적으로 유지되는가
 
-CNN 기반 모델은 locality과 translation equivariance와 같은 강한 inductive bias를 가지고 있어, 상대적으로 적은 데이터에서도 안정적인 학습이 가능하다. 반면 Vision Transformer는 이러한 inductive bias가 약한 대신, 충분한 데이터가 주어질 경우 더 높은 표현력을 발휘하는 경향이 있다.
+2. Pre-training에 따른 강건성 변화
+- pre-training이 저데이터 환경 및 성능 변동성 감소에 얼마나 기여하는가
 
-**2. Pre-training의 효과 분석**
-
-ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인 시각적 표현을 제공하여, 소규모 데이터셋에서도 성능 향상 및 빠른 수렴을 가능하게 한다. 특히 Vision Transformer는 사전학습 여부에 따라 데이터 효율성 차이가 크게 나타날 가능성이 있다.
-
-**3. 학습 데이터 크기 변화 실험의 적합성**
-
-학습 데이터의 사용 비율을 점진적으로 변화시키는 방식은
-
-- 모델의 data efficiency
-- pre-training이 저데이터 환경에서 얼마나 효과적인지
-- 아키텍처 간 성능 격차가 데이터 규모에 따라 어떻게 변화하는지
-
-를 분석하기에 적합한 설정이다.
+3. Dataset 난이도 증가에 대한 강건성
+- CIFAR-10 → CIFAR-100으로 난이도가 증가했을 때 모델 성능이 얼마나 악화되는가
 
 
 ## 실험 결과
-### 1. Pretraining 효과 확인
+### 1. Pretraining에 따른 강건성 개선
 |   Model  | Train Fraction | Scratch | Pretrained | Δ (Pretrained-Scratch) |
 | :------: | :------------: | :-----: | :--------: | :--------------------: |
 | ResNet50 |      1.0       |  0.104  |   0.039    |      **−6.50%**        |
@@ -125,17 +122,28 @@ ImageNet 기반 사전학습은 대규모 데이터에서 학습된 일반적인
 
 *Note. Δ(Pretrained–Scratch)는 Top-1 error의 절대 감소량 × 100을 의미함*
 
-- Pretrained 모델은 항상 Scratch 모델보다 낮은 error를 기록
-- 데이터가 적을수록 pretraining에 따른 성능 개선 폭이 커짐
-- Pretraining 효과는 ViT에서 훨씬 크게 나타남
-- 특히 pretrained ViT는 데이터 10%만으로도 scratch ResNet(100%)보다 낮은 Top-1 error를 기록함
+- Pretraining은 모든 설정에서 성능을 개선하며, 데이터 감소에 대한 강건성을 크게 향상
+- 데이터가 적어질수록 pretraining의 효과는 더욱 커짐
+- ViT는 scratch 상태에서 매우 취약하지만, pretraining을 통해 강건성이 크게 회복됨
 
 
-### 2. Train fraction 변화에 따른 민감도 분석
+### 2. 학습 데이터 규모 감소에 대한 민감도
 <div align="center">
 <img width="80%" height="1380" alt="image" src="https://github.com/user-attachments/assets/3bab8366-6f09-41cd-ba28-35b8bd10332e" />
 </div>
 
-- Pretraining 여부가 데이터 감소에 따른 성능 변화(민감도)를 가장 크게 좌우함
-- Pretrained 모델은 train fraction이 줄어도 성능 저하(ΔError)가 작아 안정적임
+- 데이터 감소에 따른 성능 변화는 pretraining 여부에 의해 가장 강하게 구분됨
+- Pretrained 모델은 train fraction 감소에도 성능 저하 폭이 작아 안정적
 - 모델 구조(ResNet vs ViT)에 따른 민감도 차이는 상대적으로 작음
+
+### 3. Dataset 난이도 증가에 대한 강건성 (CIFAR-10 → CIFAR-100)
+|   Model  | Pretrained |  CIFAR-10 | CIFAR-100 | Δ (C100 − C10) |
+| :------: | :--------: | :-------: | :-------: | :------------: |
+| ResNet50 |      ❌     |   0.104   |   0.323   |   **+21.88%**  |
+| ViT-S/16 |      ❌     |   0.320   |   0.582   |   **+26.15%**  |
+| ResNet50 |      ✅     | **0.039** | **0.161** |   **+12.25%**  |
+| ViT-S/16 |      ✅     |   0.066   |   0.227   |   **+16.13%**  |
+
+- Dataset 난이도 증가 시 모든 모델의 성능이 악화됨
+- ResNet는 ViT보다 난이도 증가에 더 강건
+- Pretraining은 두 모델 모두에서 난이도 증가에 따른 성능 악화를 완화
