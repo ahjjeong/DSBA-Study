@@ -93,9 +93,7 @@ Training 데이터에서 validation set을 분리할 때, 클래스 비율을 �
 
 **1. CNN과 Vision Transformer의 특성 비교**
 
-CNN 기반 모델은 locality과 translation equivariance와 같은 강한 inductive bias를 가지고 있어, 상대적으로 적은 데이터에서도 안정적인 학습이 가능하다.
-
-반면 Vision Transformer는 이러한 inductive bias가 약한 대신, 충분한 데이터가 주어질 경우 더 높은 표현력을 발휘하는 경향이 있다.
+CNN 기반 모델은 locality과 translation equivariance와 같은 강한 inductive bias를 가지고 있어, 상대적으로 적은 데이터에서도 안정적인 학습이 가능하다. 반면 Vision Transformer는 이러한 inductive bias가 약한 대신, 충분한 데이터가 주어질 경우 더 높은 표현력을 발휘하는 경향이 있다.
 
 **2. Pre-training의 효과 분석**
 
