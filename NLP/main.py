@@ -1,4 +1,6 @@
 import os
+os.environ["TORCHINDUCTOR_DISABLE"] = "1"
+os.environ["TORCH_COMPILE_DISABLE"] = "1"
 import torch
 import hydra
 import wandb
