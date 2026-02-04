@@ -28,7 +28,7 @@ def get_device(device_str: str) -> torch.device:
     return torch.device("cpu")
 
 
-def set_wandb(model: nn.Module, cfg: DictConfig) -> bool:
+def set_wandb(cfg: DictConfig) -> bool:
     if not cfg.wandb.enable:
         return False
 
@@ -39,7 +39,7 @@ def set_wandb(model: nn.Module, cfg: DictConfig) -> bool:
         if not ok:
             return False
 
-    ok = init_wandb(model, cfg)
+    ok = init_wandb(cfg)
     return ok
 
 
@@ -52,7 +52,7 @@ def wandb_login(key: Optional[str] = None) -> bool:
         return False
 
 
-def init_wandb(model: nn.Module, cfg: DictConfig) -> bool:
+def init_wandb(cfg: DictConfig) -> bool:
     try:
         project_name = cfg.wandb.get("project", "nlp-study")
         mode = cfg.wandb.get("mode", "online")
@@ -60,7 +60,7 @@ def init_wandb(model: nn.Module, cfg: DictConfig) -> bool:
         # run name
         if cfg.wandb.get("run_name") is None:
             now = datetime.now(pytz.timezone("Asia/Seoul")).strftime("%Y-%m-%d_%H-%M-%S")
-            model_name = cfg.model.model_name  # ✅ 여기 수정
+            model_name = cfg.model.name
             lr = cfg.optimizer.lr
             run_name = f"{model_name}_lr{lr}_{now}"
         else:
@@ -69,6 +69,7 @@ def init_wandb(model: nn.Module, cfg: DictConfig) -> bool:
         wandb.init(
             project=project_name,
             name=run_name,
+            group=cfg.model.name,
             mode=mode,
             config=OmegaConf.to_container(cfg, resolve=True),
         )

@@ -1,11 +1,11 @@
-set -e  # 중간에 에러 나면 바로 중단
+set -e
 
-# echo "=============================="
-# echo " Run 1: BERT-base-uncased"
-# echo "=============================="
+echo "=============================="
+echo " Run 1: BERT-base-uncased"
+echo "=============================="
 
-# python main.py \
-#   model=bert
+python main.py \
+  model=bert
 
 echo ""
 echo "=============================="

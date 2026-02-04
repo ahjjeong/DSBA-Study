@@ -1,220 +1,173 @@
 import os
-os.environ["TORCH_COMPILE_DISABLE"] = "1"
-os.environ["TORCHDYNAMO_DISABLE"] = "1"
-from typing import Tuple
-
+import torch
 import hydra
+import wandb
+from tqdm import tqdm
+import omegaconf
 from omegaconf import DictConfig, OmegaConf
 
-import torch
-import torch.nn as nn
-from torch.optim import Adam
-from torch.optim.lr_scheduler import LambdaLR
-from tqdm import tqdm
-import wandb
+# torch.cuda.set_per_process_memory_fraction(11/24) -> 김재희 로컬과 신입생 로컬의 vram 맞추기 용도. 과제 수행 시 삭제하셔도 됩니다. 
+# model과 data에서 정의된 custom class 및 function을 import합니다.
 
-from src.utils import seed_everything, get_device, set_wandb
 from src.model import EncoderForClassification
 from src.data import get_dataloader
+from src.utils import seed_everything, get_device, set_wandb
 
-def calculate_accuracy(logits: torch.Tensor, labels: torch.Tensor) -> float:
-    preds = logits.argmax(dim=-1)
-    correct = (preds == labels).sum().item()
-    return correct / labels.size(0)
 
+def train_iter(model, batch, optimizer, device, global_step: int):
+    model.train()
+    batch = {k: v.to(device) for k, v in batch.items()}
+    logits, loss = model(**batch)  # tuple 반환 가정
+    optimizer.zero_grad(set_to_none=True)
+    loss.backward()
+    optimizer.step()
+    # train acc (iter 기준)
+    acc = calculate_accuracy(logits, batch["labels"])
+    # wandb: iter(step) 단위로 loss/acc 기록
+    wandb.log(
+        {
+            "train/loss_step": loss.item(),
+            "train/acc_step": acc,
+        },
+        step=global_step,
+    )
+    return loss.item(), acc
 
 @torch.no_grad()
-def run_eval(model: nn.Module, loader, device: torch.device) -> Tuple[float, float]:
+def valid_iter(model, batch, device):
     model.eval()
-    loss_sum, acc_sum, n = 0.0, 0.0, 0
+    batch = {k: v.to(device) for k, v in batch.items()}
+    logits, loss = model(**batch)
+    acc = calculate_accuracy(logits, batch["labels"])
+    return loss.item(), acc
 
-    for batch in tqdm(loader, desc="Valid/Test", leave=False):
-        batch = {k: v.to(device) for k, v in batch.items()}
-
-        logits, loss = model(
-            input_ids=batch["input_ids"],
-            attention_mask=batch["attention_mask"],
-            token_type_ids=batch.get("token_type_ids", None),
-            label=batch["labels"],
-        )
-
-        bsz = batch["labels"].size(0)
-        loss_sum += loss.item() * bsz
-        acc_sum += calculate_accuracy(logits, batch["labels"]) * bsz
-        n += bsz
-
-    return loss_sum / n, acc_sum / n
-
-
-def save_checkpoint(path: str, model: nn.Module, optimizer, scheduler, epoch: int, best_val_acc: float):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    torch.save(
-        {
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "scheduler_state_dict": scheduler.state_dict(),
-            "epoch": epoch,
-            "best_val_acc": best_val_acc,
-        },
-        path,
-    )
-
-
-def load_checkpoint(path: str, model: nn.Module):
-    ckpt = torch.load(path, map_location="cpu")
-    model.load_state_dict(ckpt["model_state_dict"])
-    return ckpt
-
+def calculate_accuracy(logits, label):
+    preds = logits.argmax(dim=-1)
+    correct = (preds == label).sum().item()
+    return correct / label.size(0)
 
 @hydra.main(version_base=None, config_path="configs", config_name="default")
-def main(cfg: DictConfig):
-    # -----------------------------
-    # Setup
-    # -----------------------------
-    seed_everything(int(cfg.seed))
-    device = get_device(cfg.device)
+def main(configs: omegaconf.DictConfig):
+    print(OmegaConf.to_yaml(configs))
 
-    # epochs cap (assignment rule)
-    epochs = int(cfg.train.epochs)
-    if epochs > 5:
-        print(f"[WARN] epochs={epochs} > 5. Clipping to 5 due to assignment rule.")
-        epochs = 5
+    # basic setup
+    seed_everything(int(getattr(configs, "seed", 42)))
+    device = get_device(configs.device)
 
-    # -----------------------------
-    # Data config merge (dataset + name + seed)
-    # data.py needs name for tokenizer
-    # -----------------------------
-    data_cfg = OmegaConf.to_container(cfg.dataset, resolve=True)  # dict로 풀기
-    data_cfg["name"] = cfg.model.name                      # tokenizer/model name
-    data_cfg["seed"] = int(cfg.seed)                             # split seed
-    data_cfg = OmegaConf.create(data_cfg)                         # 다시 DictConfig로
+    # model
+    num_labels = int(getattr(configs.dataset, "num_labels", 2))
+    model = EncoderForClassification(configs.model, num_labels=num_labels).to(device)
 
+    # data
+    train_loader = get_dataloader(configs, split="train", model_name=configs.model.name)
+    valid_loader = get_dataloader(configs, split="valid", model_name=configs.model.name)
+    test_loader = get_dataloader(configs, split="test", model_name=configs.model.name)
 
-    train_loader = get_dataloader(cfg.dataset, "train", name=cfg.model.name, seed=cfg.seed)
-    valid_loader = get_dataloader(cfg.dataset, "valid", name=cfg.model.name, seed=cfg.seed)
-    test_loader  = get_dataloader(cfg.dataset, "test",  name=cfg.model.name, seed=cfg.seed)
+    # optimizer
+    opt_name = str(configs.optimizer.name).lower()
+    if opt_name == "adam":
+        optimizer = torch.optim.Adam(
+            model.parameters(),
+            lr=float(configs.optimizer.lr),
+            betas=tuple(configs.optimizer.betas),
+            eps=float(configs.optimizer.eps),
+            weight_decay=float(configs.optimizer.weight_decay),
+        )
+    else:
+        raise ValueError(f"Unsupported optimizer: {configs.optimizer.name}")
 
-    # -----------------------------
-    # Model
-    # -----------------------------
-    model = EncoderForClassification(cfg.model).to(device)
+    # wandb
+    use_wandb = set_wandb(configs)
 
-    # -----------------------------
-    # Optimizer + constant scheduler
-    # -----------------------------
-    optimizer = Adam(
-        model.parameters(),
-        lr=float(cfg.optimizer.lr),
-        betas=tuple(cfg.optimizer.betas),
-        eps=float(cfg.optimizer.eps),
-        weight_decay=float(cfg.optimizer.weight_decay),
-    )
-    scheduler = LambdaLR(optimizer, lr_lambda=lambda step: 1.0)
-
-    # -----------------------------
-    # W&B
-    # -----------------------------
-    use_wandb = set_wandb(model, cfg)
-
-    # -----------------------------
-    # Checkpoint paths
-    # hydra.run.dir: . 로 설정해놨으니 상대경로 그대로 프로젝트 폴더에 생김
-    # -----------------------------
-    ckpt_dir = os.path.join("checkpoints", cfg.model.name.replace("/", "_"))
-    best_ckpt_path = os.path.join(ckpt_dir, "best.pt")
-
-    # -----------------------------
-    # Training loop
-    # -----------------------------
+    # training loop
     best_val_acc = -1.0
     global_step = 0
 
-    for epoch in range(1, epochs + 1):
-        model.train()
-        loss_sum, acc_sum, n = 0.0, 0.0, 0
+    for epoch in range(int(configs.train.epochs)):
+        # train
+        train_loss_sum, train_acc_sum, n_train = 0.0, 0.0, 0
 
-        pbar = tqdm(train_loader, desc=f"Train Epoch {epoch}/{epochs}")
-        for batch in pbar:
-            batch = {k: v.to(device) for k, v in batch.items()}
-
-            logits, loss = model(
-                input_ids=batch["input_ids"],
-                attention_mask=batch["attention_mask"],
-                token_type_ids=batch.get("token_type_ids", None),
-                label=batch["labels"],
-            )
-
-            optimizer.zero_grad(set_to_none=True)
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
+        for batch in tqdm(train_loader, desc=f"Train [Epoch {epoch+1}]"):
+            if not use_wandb:
+                # wandb 안 쓰면 log 호출 안 하도록(에러 방지)
+                batch_device = {k: v.to(device) for k, v in batch.items()}
+                logits, loss = model(**batch_device)
+                acc = calculate_accuracy(logits, batch_device["labels"])
+                loss_val, acc_val = loss.item(), acc
+            else:
+                loss_val, acc_val = train_iter(model, batch, optimizer, device, global_step)
 
             bsz = batch["labels"].size(0)
-            acc = calculate_accuracy(logits, batch["labels"])
-
-            loss_sum += loss.item() * bsz
-            acc_sum += acc * bsz
-            n += bsz
+            train_loss_sum += loss_val * bsz
+            train_acc_sum += acc_val * bsz
+            n_train += bsz
             global_step += 1
 
-            pbar.set_postfix({"loss": f"{loss.item():.4f}", "acc": f"{acc:.4f}"})
+        train_loss = train_loss_sum / n_train
+        train_acc = train_acc_sum / n_train
 
-            if use_wandb:
-                wandb.log(
-                    {
-                        "train/loss_step": loss.item(),
-                        "train/acc_step": acc,
-                        "lr": optimizer.param_groups[0]["lr"],
-                        "epoch": epoch,
-                        "step": global_step,
-                    },
-                    step=global_step,
-                )
+        # valid
+        val_loss_sum, val_acc_sum, n_val = 0.0, 0.0, 0
 
-        train_loss = loss_sum / n
-        train_acc = acc_sum / n
+        for batch in tqdm(valid_loader, desc=f"Valid [Epoch {epoch+1}]"):
+            loss_val, acc_val = valid_iter(model, batch, device)
 
-        # -----------------------------
-        # Validation
-        # -----------------------------
-        val_loss, val_acc = run_eval(model, valid_loader, device)
+            bsz = batch["labels"].size(0)
+            val_loss_sum += loss_val * bsz
+            val_acc_sum += acc_val * bsz
+            n_val += bsz
+
+        val_loss = val_loss_sum / n_val
+        val_acc = val_acc_sum / n_val
 
         print(
-            f"[Epoch {epoch}] "
+            f"[Epoch {epoch+1}] "
             f"train_loss={train_loss:.4f}, train_acc={train_acc:.4f} | "
             f"val_loss={val_loss:.4f}, val_acc={val_acc:.4f}"
         )
 
+        # wandb: epoch 단위로도 기록
         if use_wandb:
             wandb.log(
                 {
+                    "epoch": epoch + 1,
                     "train/loss_epoch": train_loss,
                     "train/acc_epoch": train_acc,
-                    "val/loss": val_loss,
-                    "val/acc": val_acc,
-                    "epoch": epoch,
+                    "val/loss_epoch": val_loss,
+                    "val/acc_epoch": val_acc,
                 },
                 step=global_step,
             )
 
+        # best checkpoint
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            save_checkpoint(best_ckpt_path, model, optimizer, scheduler, epoch, best_val_acc)
-            print(f"✅ Best checkpoint updated: val_acc={best_val_acc:.4f} @ epoch={epoch}")
+            torch.save(model.state_dict(), os.path.join(os.getcwd(), "best.pt"))
 
-    # -----------------------------
-    # Test with best checkpoint
-    # -----------------------------
-    print(f"\nLoading best checkpoint: {best_ckpt_path}")
-    load_checkpoint(best_ckpt_path, model)
-    test_loss, test_acc = run_eval(model, test_loader, device)
+    # final test
+    test_loss_sum, test_acc_sum, n_test = 0.0, 0.0, 0
+
+    for batch in tqdm(test_loader, desc="Test"):
+        loss_val, acc_val = valid_iter(model, batch, device)
+
+        bsz = batch["labels"].size(0)
+        test_loss_sum += loss_val * bsz
+        test_acc_sum += acc_val * bsz
+        n_test += bsz
+
+    test_loss = test_loss_sum / n_test
+    test_acc = test_acc_sum / n_test
 
     print(f"[Test] loss={test_loss:.4f}, acc={test_acc:.4f}")
 
     if use_wandb:
-        wandb.log({"test/loss": test_loss, "test/acc": test_acc})
-        wandb.finish()
-
-
-if __name__ == "__main__":
+        wandb.log(
+            {
+                "test/loss": test_loss,
+                "test/acc": test_acc,
+            },
+            step=global_step,
+        )
+    
+if __name__ == "__main__" :
     main()

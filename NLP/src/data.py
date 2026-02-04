@@ -3,16 +3,16 @@ from typing import List, Tuple, Literal, Dict, Any, Optional
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from datasets import load_dataset, concatenate_datasets
+from datasets import DatasetDict, load_dataset, concatenate_datasets
 from transformers import AutoTokenizer
 
 import omegaconf
 
 class IMDBDatset(torch.utils.data.Dataset):
-    def __init__(self, data_config : omegaconf.DictConfig, split : Literal['train', 'valid', 'test'], name: str, seed: int):
+    def __init__(self, config : omegaconf.DictConfig, split : Literal['train', 'valid', 'test'], model_name: str):
         """
         Inputs :
-            data_config : omegaconf.DictConfig{
+            config : omegaconf.DictConfig{
                 name : str
                 batch_size : int
                 val_size : float
@@ -27,50 +27,43 @@ class IMDBDatset(torch.utils.data.Dataset):
         super().__init__()
 
         self.split = split
+        self.config = config
+        data_config = config.dataset
         self.data_config = data_config
 
+        self.seed = int(config.seed)
+        self.max_length = int(data_config.max_length)
 
-        self.seed: int = int(getattr(data_config, "seed", 42))
-        self.max_length: int = int(data_config.max_length)
+        # 데이터셋 불러오기
+        dataset = load_dataset(data_config.name)
 
-        # 1) Load dataset
-        raw = load_dataset(data_config.name)  # {'train':..., 'test':...}
+        # train(25k) + test(25k) => 50k
+        full_dataset = concatenate_datasets([dataset["train"], dataset["test"]])
 
-        # 2) Merge train+test => 50k
-        full = concatenate_datasets([raw["train"], raw["test"]])
-
-        # 3) Split into train/valid/test (deterministic)
+        # train/valid/test split
         test_size = float(data_config.test_size)
         val_size = float(data_config.val_size)
 
-        if test_size <= 0 or val_size <= 0 or (test_size + val_size) >= 1.0:
-            raise ValueError(f"Invalid split sizes: val_size={val_size}, test_size={test_size}")
+        # full -> (train_valid, test)
+        train_val_test = full_dataset.train_test_split(test_size=test_size, seed=self.seed, shuffle=True)
+        train_val = train_val_test["train"]
+        test_data = train_val_test["test"]
 
-        # First split: full -> (rest, test)
-        tmp = full.train_test_split(test_size=test_size, seed=self.seed, shuffle=True)
-        rest = tmp["train"]
-        test_ds = tmp["test"]
+        # train_valid -> (train, valid)
+        val_ratio = val_size / (1.0 - test_size)
+        train_val = train_val.train_test_split(test_size=val_ratio, seed=self.seed, shuffle=True)
+        train_data = train_val["train"]
+        val_data = train_val["test"]
 
-        # Second split: rest -> (train, valid)
-        # valid ratio relative to 'rest'
-        valid_ratio_in_rest = val_size / (1.0 - test_size)
-        tmp2 = rest.train_test_split(test_size=valid_ratio_in_rest, seed=self.seed, shuffle=True)
-        train_ds = tmp2["train"]
-        valid_ds = tmp2["test"]
+        self.data = DatasetDict({
+            'train': train_data,
+            'valid': val_data,
+            'test': test_data
+        })[split]
 
-        if split == "train":
-            self.data = train_ds
-        elif split == "valid":
-            self.data = valid_ds
-        elif split == "test":
-            self.data = test_ds
-        else:
-            raise ValueError(f"Unknown split: {split}")
+        # 토크나이저
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
 
-        # 4) Tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(name, use_fast=True)
-
-        # 5) Tokenize (padding fixed to max_length for simple collate)
         def tokenize_fn(batch: Dict[str, List[Any]]) -> Dict[str, Any]:
             return self.tokenizer(
                 batch["text"],
@@ -81,7 +74,7 @@ class IMDBDatset(torch.utils.data.Dataset):
 
         self.data = self.data.map(tokenize_fn, batched=True, desc=f"Tokenizing IMDB ({split})")
 
-        # 6) Make torch tensors
+        # torch.Tensor 형태로 반환
         cols = ["input_ids", "attention_mask", "label"]
         if "token_type_ids" in self.data.column_names:
             cols.insert(2, "token_type_ids")  # input_ids, attention_mask, token_type_ids, label
@@ -110,9 +103,6 @@ class IMDBDatset(torch.utils.data.Dataset):
             "input_ids": item["input_ids"],
             "attention_mask": item["attention_mask"],
         }
-        # token_type_ids는 모델/토크나이저에 따라 없을 수 있음
-        if "token_type_ids" in item:
-            inputs["token_type_ids"] = item["token_type_ids"]
 
         label = int(item["label"])
         return inputs, label
@@ -144,11 +134,13 @@ class IMDBDatset(torch.utils.data.Dataset):
         out["labels"] = torch.tensor(labels_list, dtype=torch.long)
         return out
     
-def get_dataloader(data_config : omegaconf.DictConfig, split : Literal['train', 'valid', 'test'], name: str, seed: int) -> torch.utils.data.DataLoader:
+def get_dataloader(config : omegaconf.DictConfig, split : Literal['train', 'valid', 'test'], model_name: str) -> torch.utils.data.DataLoader:
     """
     Output : torch.utils.data.DataLoader
     """
-    dataset = IMDBDatset(data_config, split, name=name, seed=seed)
+    data_config = config.dataset
+
+    dataset = IMDBDatset(config, split, model_name=model_name)
     dataloader = DataLoader(
         dataset,
         batch_size=int(data_config.batch_size),

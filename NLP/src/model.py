@@ -8,16 +8,15 @@ from transformers import AutoModel
 import omegaconf
 
 class EncoderForClassification(nn.Module):
-    def __init__(self, model_config : omegaconf.DictConfig):
+    def __init__(self, model_config : omegaconf.DictConfig, num_labels : int):
         super().__init__()
 
+        self.model_name = model_config.name
+        self.dropout_rate = float(model_config.dropout_rate)
+        self.num_labels = num_labels  # IMDB: pos/neg (2)
 
-        self.name: str = model_config.name
-        self.dropout_rate: float = float(getattr(model_config, "dropout_rate", 0.1))
-        self.num_labels: int = int(getattr(model_config, "num_labels", 2))  # IMDB: pos/neg
-
-        # Backbone encoder (NO AutoModelForSequenceClassification)
-        self.encoder = AutoModel.from_pretrained(self.name)
+        # Backbone encoder
+        self.encoder = AutoModel.from_pretrained(self.model_name)
 
         hidden_size = self.encoder.config.hidden_size
 
@@ -26,33 +25,26 @@ class EncoderForClassification(nn.Module):
 
         self.loss_fn = nn.CrossEntropyLoss()
     
-    def forward(self, input_ids : torch.Tensor, attention_mask : torch.Tensor, token_type_ids : torch.Tensor, label : torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, input_ids : torch.Tensor, attention_mask : torch.Tensor, labels : torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Inputs : 
             input_ids : (batch_size, max_seq_len)
             attention_mask : (batch_size, max_seq_len)
-            token_type_ids : (batch_size, max_seq_len) # only for BERT
+            token_type_ids : (batch_size, max_seq_len) # only for BERT -> imdb 데이터셋에서는 필요 없어서 제거함
             label : (batch_size)
         Outputs :
             logits : (batch_size, num_labels)
             loss : (1)
         """
-        # Build kwargs safely (ModernBERT 등은 token_type_ids를 안 받을 수 있음)
+        # Encoder 인자
         encoder_kwargs = {
             "input_ids": input_ids,
             "attention_mask": attention_mask,
         }
 
-        if token_type_ids is not None:
-            # 모델이 token_type_ids를 지원하지 않는 경우를 대비해 try/except
-            try:
-                outputs = self.encoder(**encoder_kwargs, token_type_ids=token_type_ids)
-            except TypeError:
-                outputs = self.encoder(**encoder_kwargs)
-        else:
-            outputs = self.encoder(**encoder_kwargs)
+        outputs = self.encoder(**encoder_kwargs)
 
-        # Most encoders return last_hidden_state
+        # last_hidden_state 반환
         last_hidden = outputs.last_hidden_state  # (B, L, H)
 
         # CLS pooling
@@ -61,7 +53,7 @@ class EncoderForClassification(nn.Module):
         logits = self.classifier(cls)  # (B, num_labels)
 
         loss = None
-        if label is not None:
-            loss = self.loss_fn(logits, label)
+        if labels is not None:
+            loss = self.loss_fn(logits, labels)
 
         return logits, loss
