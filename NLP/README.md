@@ -148,7 +148,7 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 | Model      | Validation Acc | Test Acc |
 | ---------- | -------------- | -------- |
 | BERT-base  | 83.18%         | 82.66%   |
-| ModernBERT | xx.xx%         | xx.xx%   |
+| ModernBERT | 84.70%         | 88.26%   |
 
 
 ### Observations
