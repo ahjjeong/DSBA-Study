@@ -202,12 +202,12 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 본 실험에서는 IMDB sentence classification task에서
 BERT-base-uncased와 ModernBERT-base를 동일한 학습 설정과 분류 구조 하에서 비교하였다.
 
-실험 결과, ModernBERT는 step-level과 epoch-level 모두에서 더 안정적인 학습 양상을 보였으며,
+실험 결과, **ModernBERT**는 step-level과 epoch-level 모두에서 더 **안정적인 학습 양상**을 보였으며,
 Validation 및 Test 성능에서도 BERT-base 대비 일관되게 우수한 결과를 기록하였다.
-특히 Validation Accuracy에서 +6.66%p, Test Accuracy에서 +2.46%p의 개선이 관찰되었다.
+특히 Validation Accuracy에서 **+6.66%p**, Test Accuracy에서 **+2.46%p**의 개선이 관찰되었다.
 
 이러한 결과는 ModernBERT가 Transformer encoder 구조 자체를 변경하지 않고도,
-사전학습 목표 단순화(NSP 제거)와 실행 및 연산 최적화를 통해
+**사전학습 목표 단순화(NSP 제거)**와 **실행 및 연산 최적화**를 통해
 representation quality와 일반화 성능을 동시에 개선할 수 있음을 시사한다.
 
 종합적으로, 본 실험은 ModernBERT가 단순한 BERT 변형이 아니라
