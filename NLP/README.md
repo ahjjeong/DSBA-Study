@@ -207,7 +207,7 @@ Validation 및 Test 성능에서도 BERT-base 대비 일관되게 우수한 결�
 특히 Validation Accuracy에서 **+6.66%p**, Test Accuracy에서 **+2.46%p**의 개선이 관찰되었다.
 
 이러한 결과는 ModernBERT가 Transformer encoder 구조 자체를 변경하지 않고도,
-**사전학습 목표 단순화(NSP 제거)**와 **실행 및 연산 최적화**를 통해
+**사전학습 목표 단순화**(**NSP 제거**)와 **실행 및 연산 최적화**를 통해
 representation quality와 일반화 성능을 동시에 개선할 수 있음을 시사한다.
 
 종합적으로, 본 실험은 ModernBERT가 단순한 BERT 변형이 아니라
