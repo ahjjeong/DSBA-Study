@@ -1,0 +1,2 @@
+name: bert-base-uncased
+dropout_rate: 0.1
