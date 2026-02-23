@@ -110,7 +110,7 @@ IMDB 데이터셋은 영화 리뷰 텍스트에 대한 **이진 감정 분류(po
 * Random seed: 42 (재현성 보장)
 * Loss: Cross Entropy Loss
 
-## Optimizer 설정
+### Optimizer 설정
 * Optimizer: Adam
 * Learning Rate: 5e-5
 * Betas: (0.9, 0.999)
