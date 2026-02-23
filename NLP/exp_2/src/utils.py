@@ -65,8 +65,8 @@ def init_wandb(cfg: DictConfig) -> bool:
             lr = cfg.optimizer.lr
 
             per_device_bs = int(cfg.dataset.batch_size)
-            grad_accum = int(getattr(cfg.train, "grad_accum_steps", 1))
-            global_bs = per_device_bs * grad_accum
+            global_bs = int(cfg.train.global_batch_size)
+            grad_accum = global_bs // per_device_bs
 
             backend = getattr(cfg, "backend", "torch")
 

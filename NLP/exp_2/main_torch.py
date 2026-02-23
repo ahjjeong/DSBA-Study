@@ -36,16 +36,16 @@ def main(configs: omegaconf.DictConfig):
     seed_everything(int(getattr(configs, "seed", 42)))
     device = get_device(configs.device)
 
-    # model
-    num_labels = int(getattr(configs.dataset, "num_labels", 2))
+    # 모델 생성
+    num_labels = int(getattr(configs.dataset, "num_labels", 2)) # IMDB가 이진분류이기 때문
     model = EncoderForClassification(configs.model, num_labels=num_labels).to(device)
 
-    # data
+    # 데이터 로더 생성
     train_loader = get_dataloader(configs, split="train", model_name=configs.model.name)
     valid_loader = get_dataloader(configs, split="valid", model_name=configs.model.name)
     test_loader = get_dataloader(configs, split="test", model_name=configs.model.name)
 
-    # optimizer
+    # optimizer 생성
     opt_name = str(configs.optimizer.name).lower()
     if opt_name == "adam":
         optimizer = torch.optim.Adam(
@@ -58,45 +58,55 @@ def main(configs: omegaconf.DictConfig):
     else:
         raise ValueError(f"Unsupported optimizer: {configs.optimizer.name}")
 
-    # grad accum
-    grad_accum_steps = int(getattr(configs.train, "grad_accum_steps", 1))
-    max_grad_norm = float(getattr(configs.train, "max_grad_norm", 0.0))
-    if grad_accum_steps < 1:
-        raise ValueError("train.grad_accum_steps must be >= 1")
+    # grad accumulation 설정
+    per_device_bs = int(configs.dataset.batch_size)
+    global_bs = int(configs.train.global_batch_size)
 
-    # wandb
+    if global_bs % per_device_bs != 0:
+        raise ValueError(
+            f"global_batch_size ({global_bs}) must be divisible by "
+            f"per_device_batch_size ({per_device_bs})"
+        )
+
+    grad_accum_steps = global_bs // per_device_bs
+
+    # wandb 켜기
     use_wandb = set_wandb(configs)
 
     best_val_acc = -1.0
-    global_step = 0 # iter 단위로 증가시키면서 기록
+    global_step = 0
 
+    # best.pt 저장 경로
     run_dir = HydraConfig.get().runtime.output_dir
     checkpoint_path = os.path.join(run_dir, "best.pt")
 
-    # train
+    # train loop
     for epoch in range(int(configs.train.epochs)):
-        model.train()
-        optimizer.zero_grad(set_to_none=True)
-
+        model.train() # train 모드로 전환
+        optimizer.zero_grad(set_to_none=True) # gradient 초기화
+        
+        # epoch 단위 통계 변수 초기화
         train_loss_sum, train_acc_sum, n_train = 0.0, 0.0, 0
 
-        win_loss_sum = 0.0 
-        win_correct = 0
-        win_total = 0
+        # 누적 단위 통계 변수 초기화
+        win_loss_sum, win_correct, win_total = 0.0, 0, 0
 
+        # micro-batch 단위 학습
         for step, batch in enumerate(tqdm(train_loader, desc=f"Train [Epoch {epoch+1}]"), start=1):
-            batch = {k: v.to(device) for k, v in batch.items()}
-            logits, loss = model(**batch)
+            batch = {k: v.to(device) for k, v in batch.items()} # 배치를 GPU로
+            # forward
+            logits, loss = model(**batch) 
             acc = calculate_accuracy(logits, batch["labels"])
-            bsz = batch["labels"].size(0)
+            bsz = batch["labels"].size(0) # bsz = 16
+            # 누적 단위 통계 업데이트
             win_loss_sum += loss.item() * bsz
             win_correct += (logits.argmax(dim=-1) == batch["labels"]).sum().item()
             win_total += bsz
 
-            # accumulate gradients
+            # accumulate gradients - 각 micro-batch의 gradient를 1/grad_accum_steps만큼 줄여서 누적
             (loss / grad_accum_steps).backward()
 
-            # stats
+            # epoch 단위 통계 업데이트
             loss_item = loss.item()
             train_loss_sum += loss_item * bsz
             train_acc_sum += acc * bsz
@@ -104,12 +114,12 @@ def main(configs: omegaconf.DictConfig):
 
             # 가중치 업데이트 (grad_accum_steps마다)
             if step % grad_accum_steps == 0:
-                if max_grad_norm > 0:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
                 optimizer.step()
                 optimizer.zero_grad(set_to_none=True)
 
+                # wandb 로깅
                 if use_wandb:
+                    # 누적 구간 평균으로 wandb 로그
                     loss_step = win_loss_sum / max(win_total, 1)
                     acc_step = win_correct / max(win_total, 1)
 
@@ -118,6 +128,7 @@ def main(configs: omegaconf.DictConfig):
                         step=global_step,
                     )
 
+                # 누적 단위 통계 초기화
                 win_loss_sum = 0.0
                 win_correct = 0
                 win_total = 0
@@ -126,11 +137,10 @@ def main(configs: omegaconf.DictConfig):
 
         # 나머지 gradient 처리 (배치 수가 누적 단계로 나누어 떨어지지 않을 때)
         if (len(train_loader) % grad_accum_steps) != 0:
-            if max_grad_norm > 0:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
 
+            # wandb 로깅
             if use_wandb and win_total > 0:
                 loss_step = win_loss_sum / win_total
                 acc_step = win_correct / win_total
@@ -139,18 +149,19 @@ def main(configs: omegaconf.DictConfig):
                     step=global_step,
                 )
 
-            # reset window stats
+            # 누적 단위 통계 초기화
             win_loss_sum = 0.0
             win_correct = 0
             win_total = 0
 
             global_step += 1
 
+        # epoch 단위 통계 계산
         train_loss = train_loss_sum / n_train
         train_acc = train_acc_sum / n_train
 
-        # valid
-        model.eval()
+        # validation
+        model.eval() # eval 모드로 전환
         val_loss_sum, val_acc_sum, n_val = 0.0, 0.0, 0
 
         with torch.no_grad():

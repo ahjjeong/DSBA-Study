@@ -59,7 +59,17 @@ def main(configs: omegaconf.DictConfig):
     if os.path.split(os.getcwd())[-1] == "outputs":
         print(OmegaConf.to_yaml(configs))
 
-    grad_accum_steps = int(getattr(configs.train, "grad_accum_steps", 1))
+    per_device_bs = int(configs.dataset.batch_size)
+    global_bs = int(configs.train.global_batch_size)
+
+    if global_bs % per_device_bs != 0:
+        raise ValueError(
+            f"global_batch_size ({global_bs}) must be divisible by "
+            f"per_device_batch_size ({per_device_bs})"
+        )
+
+    grad_accum_steps = global_bs // per_device_bs
+
     accelerator = Accelerator(gradient_accumulation_steps=grad_accum_steps)
     device = accelerator.device
 

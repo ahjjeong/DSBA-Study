@@ -27,8 +27,7 @@ optimizer:
 
 train:
   epochs: 5
-  grad_accum_steps: 1
-  max_grad_norm: 0.0
+  global_batch_size: 64
 
 wandb:
   enable: true
