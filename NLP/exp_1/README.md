@@ -14,16 +14,20 @@
 NLP/
 └── exp_1/
     ├── README.md                     # 프로젝트 개요 및 실험 결과 정리
+    │
     ├── configs/                      # 실험 설정 관리 (Hydra 기반)
     │   ├── default.yaml              # 공통 기본 설정
     │   └── model/                    # 모델 설정
     │       ├── bert.yaml
     │       └── modernbert.yaml
+    │
     ├── src/                          # 핵심 로직 코드
     │   ├── data.py                   # IMDB 데이터 로딩 및 토크나이징
     │   ├── model.py                  # EncoderForClassification 정의
     │   └── utils.py                  # seed, device, config, wandb util
+    │
     ├── main.py                       # 전체 학습 / 평가 entry point
+    │
     └── scripts/
         └── run_all.sh                # BERT / ModernBERT 실험 자동 실행
 ```
