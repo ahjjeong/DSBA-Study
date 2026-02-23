@@ -174,10 +174,62 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 - Batch size 64 / 256 / 1024 중 최적 batch size 탐색
 - Torch vs Accelerate 구현 비교
 
+---
+
 ### Results
-- BERT
-<img src="https://github.com/user-attachments/assets/47553397-02c4-4e4e-96c1-5a0a1d6a5906" />
 
-- ModernBERT
-  
+## 1. Torch 기반 실험
 
+**BERT**
+<div align="center">
+    <img src="https://github.com/user-attachments/assets/47553397-02c4-4e4e-96c1-5a0a1d6a5906" width="49%" />
+    <img src="https://github.com/user-attachments/assets/ce13ea21-8e6c-494e-aacd-abdf9b02186d" width="41%" />
+</div>
+
+**ModernBERT**
+<div align="center">
+    <img src="https://github.com/user-attachments/assets/9fbd5a0c-da4f-42b7-83d8-d80ddaa2599b" width="49%" />
+    <img src="https://github.com/user-attachments/assets/0f8d7c20-5ecc-408d-b3d7-1542bd36da49" width="41%" />
+</div>
+
+**Test Accuracy Summary**
+
+| Global Batch Size | BERT   | ModernBERT |
+|-------------------|:------:|:----------:|
+| 64                | **82.90%** | 89.82%     |
+| 256               | 74.86% | 90.54%     |
+| 1024              | 49.50% | **91.02%**     |
+
+- **BERT**
+    - optimal batch size: 64
+    - 배치가 커질수록 성능이 급격히 하락 (0.829 → 0.7486 → 0.4950)
+    <div align="left">
+        <img src="https://github.com/user-attachments/assets/3776fad2-7b5d-4a11-9fd2-a73e12c9105d" width="45%" />
+        <img src="https://github.com/user-attachments/assets/8a5ceeeb-1d33-4f16-918f-c2aa64f08bd7" width="45%" />
+    </div>
+
+- **ModernBERT**
+    - optimal batch size: 1024
+    - 배치가 커질수록 성능이 지속적으로 향상 (0.8982 → 0.9054 → 0.9102)
+
+## 2. HuggingFace Accelerate 기반 실험
+
+**BERT**
+<div align="center">
+    <img src="https://github.com/user-attachments/assets/7dd1d762-bc6f-4a40-9d14-203c308d5e77" width="49%" />
+    <img src="https://github.com/user-attachments/assets/08d76809-55b6-4a52-a959-ac5ca417323a" width="41%" />
+</div>
+
+**ModernBERT**
+<div align="center">
+    <img src="https://github.com/user-attachments/assets/eeebbafb-c745-40a1-ba01-f8639c8897b7" width="49%" />
+    <img src="https://github.com/user-attachments/assets/c95af199-2ef3-4f0b-817c-baea63997c9a" width="41%" />
+</div>
+
+**Test Accuracy Summary**
+
+| Global Batch Size | BERT   | ModernBERT |
+|-------------------|:------:|:----------:|
+| 64                | 87.46% | 90.08%     |
+| 256               | 50.50% | 50.50%     |
+| 1024              | 88.02% | 91.06%     |
