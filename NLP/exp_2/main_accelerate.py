@@ -9,6 +9,8 @@ from tqdm import tqdm
 import omegaconf
 from omegaconf import OmegaConf
 
+from hydra.core.hydra_config import HydraConfig
+
 from accelerate import Accelerator
 
 from src.model import EncoderForClassification
@@ -97,7 +99,9 @@ def main(configs: omegaconf.DictConfig):
 
     best_val_acc = -1.0
     global_step = 0
-    checkpoint_path = os.path.join(os.getcwd(), "best.pt")
+
+    run_dir = HydraConfig.get().runtime.output_dir
+    checkpoint_path = os.path.join(run_dir, "best.pt")
 
     # train
     for epoch in range(int(configs.train.epochs)):
@@ -106,25 +110,48 @@ def main(configs: omegaconf.DictConfig):
         train_loss_sum, n_train = 0.0, 0
         correct_sum, total_sum = torch.tensor(0, device=device), torch.tensor(0, device=device)
 
+        win_loss_sum = torch.tensor(0.0, device=device)
+        win_n = torch.tensor(0, device=device)
+        win_correct = torch.tensor(0, device=device)
+        win_total = torch.tensor(0, device=device)
+
         for batch in tqdm(train_loader, desc=f"Train [Epoch {epoch+1}]", disable=not accelerator.is_local_main_process):
             with accelerator.accumulate(model):
                 logits, loss = model(**batch)
                 accelerator.backward(loss)
 
+                bsz = batch["labels"].size(0)
+                win_loss_sum += loss.detach() * bsz
+                win_n += bsz
+
+                preds = logits.argmax(dim=-1)
+                win_correct += (preds == batch["labels"]).sum()
+                win_total += batch["labels"].numel()
+
                 # step 단위 로그 (sync가 일어날 때만)
                 if accelerator.sync_gradients:
                     optimizer.step()
                     optimizer.zero_grad(set_to_none=True)
-                    
+
                     if use_wandb and accelerator.is_main_process:
-                        c, t = batch_correct_total(logits, batch["labels"])
-                        c, t = accelerator.gather_for_metrics((c, t))
-                        acc_step = (c.sum().float() / t.sum().float()).item()
+                        red_loss_sum = accelerator.reduce(win_loss_sum, reduction="sum")
+                        red_n = accelerator.reduce(win_n, reduction="sum")
+                        red_correct = accelerator.reduce(win_correct, reduction="sum")
+                        red_total = accelerator.reduce(win_total, reduction="sum")
+
+                        loss_step = (red_loss_sum / red_n.clamp(min=1)).item()
+                        acc_step = (red_correct.float() / red_total.clamp(min=1).float()).item()
 
                         wandb.log(
-                            {"train/loss_step": loss.item(), "train/acc_step": acc_step},
+                            {"train/loss_step": loss_step, "train/acc_step": acc_step},
                             step=global_step,
                         )
+
+                    win_loss_sum.zero_()
+                    win_n.zero_()
+                    win_correct.zero_()
+                    win_total.zero_()
+
                     global_step += 1
 
             # stats (local)

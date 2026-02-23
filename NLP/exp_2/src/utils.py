@@ -70,12 +70,15 @@ def init_wandb(cfg: DictConfig) -> bool:
 
             backend = getattr(cfg, "backend", "torch")
 
+            pid = os.getpid()
+            
             run_name = (
                 f"{backend}_"
                 f"{model_name}"
                 f"_gbs{global_bs}"
                 f"_acc{grad_accum}"
                 f"_lr{lr}"
+                f"_pid{pid}"
                 f"_{now}"
             )
         else:

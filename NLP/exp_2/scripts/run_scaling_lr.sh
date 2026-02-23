@@ -18,7 +18,7 @@ run_one () {
     train.epochs=5 \
     train.grad_accum_steps=$ACCUM \
     optimizer.lr=$LR \
-    wandb.project=nlp-study-exp2-lr
+    wandb.project=nlp-study-exp2-lr-again
 }
 
 run_one bert 64 4 5e-5

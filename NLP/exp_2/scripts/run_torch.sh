@@ -28,9 +28,9 @@ run_one () {
 # global 256 => accum 16
 # global 1024=> accum 64
 
-# run_one bert 64 4
-# run_one bert 256 16
-# run_one bert 1024 64
+run_one bert 64 4
+run_one bert 256 16
+run_one bert 1024 64
 
 run_one modernbert 64 4
 run_one modernbert 256 16

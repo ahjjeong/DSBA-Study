@@ -1,6 +1,6 @@
 hydra:
   run:
-    dir: .
+    dir: outputs/${now:%Y-%m-%d_%H-%M-%S}/${hydra.job.override_dirname}
   output_subdir: null
 
 defaults:
@@ -32,7 +32,7 @@ train:
 
 wandb:
   enable: true
-  project: nlp-study-exp2
+  project: nlp-study-exp2-again
   entity: null
   mode: online
   save_code: true

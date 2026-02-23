@@ -9,6 +9,8 @@ from tqdm import tqdm
 import omegaconf
 from omegaconf import OmegaConf
 
+from hydra.core.hydra_config import HydraConfig
+
 from src.model import EncoderForClassification
 from src.data import get_dataloader
 from src.utils import seed_everything, get_device, set_wandb
@@ -68,6 +70,9 @@ def main(configs: omegaconf.DictConfig):
     best_val_acc = -1.0
     global_step = 0 # iter 단위로 증가시키면서 기록
 
+    run_dir = HydraConfig.get().runtime.output_dir
+    checkpoint_path = os.path.join(run_dir, "best.pt")
+
     # train
     for epoch in range(int(configs.train.epochs)):
         model.train()
@@ -75,17 +80,24 @@ def main(configs: omegaconf.DictConfig):
 
         train_loss_sum, train_acc_sum, n_train = 0.0, 0.0, 0
 
+        win_loss_sum = 0.0 
+        win_correct = 0
+        win_total = 0
+
         for step, batch in enumerate(tqdm(train_loader, desc=f"Train [Epoch {epoch+1}]"), start=1):
             batch = {k: v.to(device) for k, v in batch.items()}
             logits, loss = model(**batch)
             acc = calculate_accuracy(logits, batch["labels"])
+            bsz = batch["labels"].size(0)
+            win_loss_sum += loss.item() * bsz
+            win_correct += (logits.argmax(dim=-1) == batch["labels"]).sum().item()
+            win_total += bsz
 
             # accumulate gradients
             (loss / grad_accum_steps).backward()
 
             # stats
             loss_item = loss.item()
-            bsz = batch["labels"].size(0)
             train_loss_sum += loss_item * bsz
             train_acc_sum += acc * bsz
             n_train += bsz
@@ -98,10 +110,18 @@ def main(configs: omegaconf.DictConfig):
                 optimizer.zero_grad(set_to_none=True)
 
                 if use_wandb:
+                    loss_step = win_loss_sum / max(win_total, 1)
+                    acc_step = win_correct / max(win_total, 1)
+
                     wandb.log(
-                        {"train/loss_step": loss_item, "train/acc_step": acc},
+                        {"train/loss_step": loss_step, "train/acc_step": acc_step},
                         step=global_step,
                     )
+
+                win_loss_sum = 0.0
+                win_correct = 0
+                win_total = 0
+
                 global_step += 1
 
         # 나머지 gradient 처리 (배치 수가 누적 단계로 나누어 떨어지지 않을 때)
@@ -110,6 +130,20 @@ def main(configs: omegaconf.DictConfig):
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
+
+            if use_wandb and win_total > 0:
+                loss_step = win_loss_sum / win_total
+                acc_step = win_correct / win_total
+                wandb.log(
+                    {"train/loss_step": loss_step, "train/acc_step": acc_step},
+                    step=global_step,
+                )
+
+            # reset window stats
+            win_loss_sum = 0.0
+            win_correct = 0
+            win_total = 0
+
             global_step += 1
 
         train_loss = train_loss_sum / n_train
@@ -152,10 +186,10 @@ def main(configs: omegaconf.DictConfig):
         # best 모델 저장
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), os.path.join(os.getcwd(), "best.pt"))
+            torch.save(model.state_dict(), checkpoint_path)
 
     # test
-    model.load_state_dict(torch.load("best.pt", map_location=device))
+    model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()
 
     test_loss_sum, test_acc_sum, n_test = 0.0, 0.0, 0
