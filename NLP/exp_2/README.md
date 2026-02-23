@@ -175,4 +175,9 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 - Torch vs Accelerate 구현 비교
 
 ### Results
+- BERT
+<img src="https://github.com/user-attachments/assets/47553397-02c4-4e4e-96c1-5a0a1d6a5906" />
+
+- ModernBERT
+  
 
