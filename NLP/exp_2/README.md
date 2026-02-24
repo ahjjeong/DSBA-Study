@@ -217,20 +217,18 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 ### 3. Learning Rate scaling 실험
 
 앞선 실험에서는 Global Batch Size를 64 → 256 → 1024로 증가시켰지만, learning rate는 5e-5로 고정하였다.
-하지만 batch size가 증가하면 gradient의 분산이 감소하는데, 동일한 learning rate를 유지하면 큰 배치는 상대적으로 보수적인 업데이트가 된다.
-즉, large batch가 충분히 학습 신호를 활용하지 못하게 되어 완전히 공정한 비교라고 보기 어렵다.
 
-> **batch size 증가에 따라 learning rate도 함께 조정**하는 것이 더 공정한 비교에 가깝다.
+하지만 **batch size 증가에 따라 learning rate도 함께 조정**하는 것이 더 공정한 비교에 가깝다.
 
 **[ Linear Learning Rate Scaling Rule ]**
 
-본 실험에서는 다음과 같은 sqrt scaling rule을 적용하였다.
+본 실험에서는 다음과 같은 linear scaling rule을 적용하였다.
 
-$$ \text{LR}_\text{new} = \text{LR}_\text{base} × \sqrt{\dfrac{\text{B}_\text{new}}{\text{B}_\text{base}}} $$
+$$ \text{LR}_\text{new} = \text{LR}_\text{base} × \dfrac{\text{B}_\text{new}}{\text{B}_\text{base}} $$
 
 | Batch Size | Learning Rate |
 | ---------- | ------------- |
 | 64         | 5e-5          |
-| 256        | 1e-4          |
-| 1024       | 2e-4          |
+| 256        | 2e-4          |
+| 1024       | 8e-4          |
 
