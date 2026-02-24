@@ -4,14 +4,14 @@
 
 본 repository는 IMDB 문장 감정 분류 문제에서 effective batch size scaling이 학습 안정성과 일반화 성능에 미치는 영향을 분석하기 위한 실험을 다룬다.
 
-특히, 동일한 모델 구조와 optimizer 설정 하에서
+특히 64 / 256 / 1024 중 **최적의 batch size**를 탐색하고,
 
-- 순수 PyTorch 기반 Gradient Accumulation
-- HuggingFace Accelerate 기반 Gradient Accumulation
+동일한 모델 구조와 optimizer 설정 하에서
 
-을 비교하고,
+- **PyTorch** 기반 Gradient Accumulation
+- **HuggingFace Accelerate** 기반 Gradient Accumulation
 
-Global Batch Size 64 / 256 / 1024 중 최적의 batch size를 탐색하는 것을 목표로 한다.
+을 비교하는 것을 목표로 한다.
 
 ---
 
@@ -134,10 +134,7 @@ if (step + 1) % grad_accum_steps == 0:
     optimizer.zero_grad()
 ```
 
-**[ 특징 ]**
-- loss scaling 필요
-- optimizer step 제어 직접 수행
-- logging 시 raw loss와 scaled loss 구분 필요
+- ```loss / grad_accum_steps```로 loss scaling을 명시적으로 해야 함
 
 ### 2. HuggingFace Accelerate 기반 Gradient Accumulation
 
@@ -146,15 +143,11 @@ with accelerator.accumulate(model):
     outputs = model(**batch)
     loss = outputs.loss
     accelerator.backward(loss)
-
     optimizer.step()
     optimizer.zero_grad()
 ```
 
-**[ 특징 ]**
-- loss scaling 자동 처리
-- 분산 학습 확장 가능
-- 코드 간결
+- accelerator.accumulate(model)가 누적 구간을 관리
 
 ## Metrics
 
