@@ -1,4 +1,4 @@
-# IMDB Sentiment Classification
+# IMDB Sentiment Classification Batch Size Scaling
 
 ### Batch Size Scaling with Gradient Accumulation (Torch vs Accelerate)
 
