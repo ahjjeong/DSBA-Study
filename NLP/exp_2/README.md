@@ -202,6 +202,7 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
     - ModernBERT: +1.20%p
 - ModernBERT는 모든 batch size에서 BERT보다 높은 성능을 보임
 
+
 ### 2. HuggingFace Accelerate 기반 실험
 
 <div align="center">
@@ -212,17 +213,17 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 - Batsch size가 64일 때 BERT의 결과를 예시로 첨부함
 - 나머지 설정에서도 torch와 accelerate의 결과가 완전히 일치함
 
+
 ### 3. Learning Rate scaling 실험
 
 앞선 실험에서는 Global Batch Size를 64 → 256 → 1024로 증가시켰지만, learning rate는 5e-5로 고정하였다.
-
 하지만 batch size가 증가하면 gradient의 분산이 감소하는데, 동일한 learning rate를 유지하면 큰 배치는 상대적으로 보수적인 업데이트가 된다.
-
 즉, large batch가 충분히 학습 신호를 활용하지 못하게 되어 완전히 공정한 비교라고 보기 어렵다.
 
-따라서, Batch size 증가에 따라 learning rate도 함께 조정하는 것이 더 공정한 비교에 가깝다.
+> **batch size 증가에 따라 learning rate도 함께 조정**하는 것이 더 공정한 비교에 가깝다.
 
 **[ Linear Learning Rate Scaling Rule ]**
+
 본 실험에서는 다음과 같은 sqrt scaling rule을 적용하였다.
 
 $$ \text{LR}_\text{new} = \text{LR}_\text{base} × \sqrt{\dfrac{\text{Global Batch Size}}{64}} $$
