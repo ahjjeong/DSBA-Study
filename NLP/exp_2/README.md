@@ -182,20 +182,20 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 
 **BERT**
 <div align="center">
-    <img src="https://github.com/user-attachments/assets/c690fe25-8e4f-4cab-9311-7b07f68ce35" width="45%" />
-    <img src="https://github.com/user-attachments/assets/05d4240c-7b58-4549-a2e8-02b8141ff153" width="45%" />
+    <img src="https://github.com/user-attachments/assets/4b1892f3-965d-4631-883b-f69687c7828a" width="45%" />
+    <img src="https://github.com/user-attachments/assets/2ac199ba-e364-40f2-871f-0b4e9b2df292" width="45%" />
 </div>
 
 **ModernBERT**
 <div align="center">
-    <img src="https://github.com/user-attachments/assets/7b57f550-32ac-4f45-8259-4af75af7bcc1" width="45%" />
-    <img src="[https://github.com/user-attachments/assets/0f8d7c20-5ecc-408d-b3d7-1542bd36da49](https://github.com/user-attachments/assets/efb315d1-ad13-4543-bbea-e05bdad7af5b)" width="45%" />
+    <img src="https://github.com/user-attachments/assets/61a403c9-f2d1-4dc3-bd00-292e8156592f" width="45%" />
+    <img src="https://github.com/user-attachments/assets/b70a002a-401e-4268-9dea-015d24aa7d6b" width="45%" />
 </div>
 
 **Test Accuracy Summary**
 <div align="center">
-    <img src="https://github.com/user-attachments/assets/b9ee33d5-65cc-4ff1-ba3e-b18834ec1711" width="45%" />
-    <img src="https://github.com/user-attachments/assets/40f77c5f-831d-4398-bc2d-257d28ade066" width="45%" />
+    <img src="https://github.com/user-attachments/assets/69737444-2fe6-487f-a389-f34cbabcdc88" width="45%" />
+    <img src="https://github.com/user-attachments/assets/54605dc6-fb38-4d14-873c-e79f904d693d" width="45%" />
 </div>
 
 | Global Batch Size | BERT   | ModernBERT |
