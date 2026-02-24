@@ -218,7 +218,11 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 
 앞선 실험에서는 Global Batch Size를 64 → 256 → 1024로 증가시켰지만, learning rate는 5e-5로 고정하였다.
 
-하지만 **batch size 증가에 따라 learning rate도 함께 조정**하는 것이 더 공정한 비교에 가깝다.
+하지만 
+- Batch size가 커질수록 gradient noise가 감소함
+- Learning rate를 고정하면 large batch는 상대적으로 작은 탐색 효과를 가짐
+
+> 따라서 **batch size 증가에 따라 learning rate도 함께 조정**하는 것이 더 공정한 비교에 가깝다.
 
 **[ Linear Learning Rate Scaling Rule ]**
 
@@ -228,13 +232,7 @@ $$ \text{LR}_\text{new} = \text{LR}_\text{base} × \dfrac{\text{B}_\text{new}}{\
 
 | Batch Size | Learning Rate | BERT    | ModernBERT       |
 |------------|--------------|----------|----------------|
-| 64         | 5e-5         | XX.XX%    | XX.XX%          |
+| 64         | 5e-5         | 84.06%    | 89.82%          |
 | 256        | 2e-4         | XX.XX%    | XX.XX%          |
 | 1024       | 8e-4         | XX.XX%    | XX.XX%          |
 
-
-- Large batch + 고정 LR → 보수적인 업데이트 → 안정적 수렴
-
-- Large batch + 선형 LR 증가 → 업데이트 크기 과도 → 일반화 저하
-
-> Batch size 증가가 항상 성능 향상으로 이어지는 것은 아니며, learning rate와의 상호작용을 함께 고려해야 한다.
