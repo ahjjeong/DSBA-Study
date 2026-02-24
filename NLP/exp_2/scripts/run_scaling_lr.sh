@@ -29,12 +29,12 @@ run_one () {
 }
 
 run_one bert 64 5e-5
-run_one bert 256 2e-4
-run_one bert 1024 8e-4
+run_one bert 256 1e-4
+run_one bert 1024 2e-4
 
 run_one modernbert 64 5e-5
-run_one modernbert 256 2e-4
-run_one modernbert 1024 8e-4
+run_one modernbert 256 1e-4
+run_one modernbert 1024 2e-4
 
 echo ""
 echo "All TORCH LR-scaling experiments finished."
