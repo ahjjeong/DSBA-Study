@@ -216,6 +216,10 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 
 ### 3. Learning Rate scaling 실험
 
+```
+bash scripts/run_scaling_lr.sh
+```
+
 앞선 실험에서는 Global Batch Size를 64 → 256 → 1024로 증가시켰지만, learning rate는 5e-5로 고정하였다.
 
 하지만 
@@ -230,9 +234,14 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 
 $$ \text{LR}_\text{new} = \text{LR}_\text{base} × \dfrac{\text{B}_\text{new}}{\text{B}_\text{base}} $$
 
+
 | Batch Size | Learning Rate | BERT    | ModernBERT       |
 |------------|--------------|----------|----------------|
 | 64         | 5e-5         | 84.06%    | 89.82%          |
-| 256        | 2e-4         | XX.XX%    | XX.XX%          |
-| 1024       | 8e-4         | XX.XX%    | XX.XX%          |
+| 256        | 2e-4         | 81.84%    | 89.34%          |
+| 1024       | 8e-4         | 56.92%    | XX.XX%          |
 
+- Batch size가 증가할수록 test accuracy가 오히려 감소하는 경향을 보임
+- 이는 large batch의 성능 향상이 단순히 batch size 자체의 효과가 아니라 작은 learning rate와 결합된 안정성 효과였을 가능성을 시사함
+
+> Batch size 증가가 항상 성능 향상으로 이어지는 것은 아니며, Learning rate와의 상호작용을 함께 고려해야 한다.
