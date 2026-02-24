@@ -228,20 +228,27 @@ bash scripts/run_scaling_lr.sh
 
 > 따라서 **batch size 증가에 따라 learning rate도 함께 조정**하는 것이 더 공정한 비교에 가깝다.
 
-**[ Linear Learning Rate Scaling Rule ]**
+**[ Square-root Learning Rate Scaling Rule ]**
 
-본 실험에서는 다음과 같은 linear scaling rule을 적용하였다.
+본 실험에서는 초기 linear scaling을 적용하였으나, large batch에서 learning rate 증가폭이 과도하여 성능 감소가 크게 나타났다.
 
-$$ \text{LR}_\text{new} = \text{LR}_\text{base} × \dfrac{\text{B}_\text{new}}{\text{B}_\text{base}} $$
+따라서 보다 완만한 learning rate 증가를 위해 다음과 같은 sqrt scaling rule을 적용하였다.
+
+$$ \text{LR}_\text{new} = \text{LR}_\text{base} × \sqrt{\dfrac{\text{B}_\text{new}}{\text{B}_\text{base}}} $$
 
 
 | Batch Size | Learning Rate | BERT    | ModernBERT       |
 |------------|--------------|----------|----------------|
-| 64         | 5e-5         | 84.06%    | 89.82%          |
-| 256        | 2e-4         | 81.84%    | 89.34%          |
-| 1024       | 8e-4         | 56.92%    | XX.XX%          |
+| 64         | 5e-5         | **84.06%**    | 89.82%          |
+| 256        | 1e-4         | 83.74%    | **90.78%**          |
+| 1024       | 2e-4         | 82.54%    | 90.62%          |
 
-- Batch size가 증가할수록 test accuracy가 오히려 감소하는 경향을 보임
-- 이는 large batch의 성능 향상이 단순히 batch size 자체의 효과가 아니라 작은 learning rate와 결합된 안정성 효과였을 가능성을 시사함
+- **BERT**
+    - Batch size가 증가할수록 성능이 점진적으로 감소
+    - Small batch 환경에서 가장 높은 성능을 기록
+  
+- **ModernBERT**
+    - Batch size 256에서 최고 성능 달성
+    - 1024에서는 소폭 감소하였으나 큰 성능 붕괴는 없음
 
-> Batch size 증가가 항상 성능 향상으로 이어지는 것은 아니며, Learning rate와의 상호작용을 함께 고려해야 한다.
+> Batch size와 learning rate 간의 상호작용이 모델 구조에 따라 다르게 작용할 수 있다.
