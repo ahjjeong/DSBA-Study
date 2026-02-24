@@ -134,7 +134,7 @@ if (step + 1) % grad_accum_steps == 0:
     optimizer.zero_grad()
 ```
 
-**특징**
+**[ 특징 ]**
 - loss scaling 필요
 - optimizer step 제어 직접 수행
 - logging 시 raw loss와 scaled loss 구분 필요
@@ -151,7 +151,7 @@ with accelerator.accumulate(model):
     optimizer.zero_grad()
 ```
 
-**특징**
+**[ 특징 ]**
 - loss scaling 자동 처리
 - 분산 학습 확장 가능
 - 코드 간결
@@ -180,35 +180,72 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 
 ## 1. Torch 기반 실험
 
-**BERT**
+**[ BERT ]**
 <div align="center">
     <img src="https://github.com/user-attachments/assets/4b1892f3-965d-4631-883b-f69687c7828a" width="45%" />
     <img src="https://github.com/user-attachments/assets/2ac199ba-e364-40f2-871f-0b4e9b2df292" width="45%" />
 </div>
 
-**ModernBERT**
+**[ ModernBERT ]**
 <div align="center">
     <img src="https://github.com/user-attachments/assets/61a403c9-f2d1-4dc3-bd00-292e8156592f" width="45%" />
     <img src="https://github.com/user-attachments/assets/b70a002a-401e-4268-9dea-015d24aa7d6b" width="45%" />
 </div>
 
-**Test Accuracy Summary**
+- 큰 배치(1024)에서 성능 저하 없이 안정적으로 수렴함
+- Step 단위 train accuracy를 보면
+  
+    - 작은 배치(64)는 변동성이 더 큼
+    - 큰 배치(1024)는 더 안정적인 최적화 경향을 보임
+- Validation curve 기준으로도 큰 배치가 더 높은 최종 정확도에 도달
+
+**[ Test Accuracy Summary ]**
 <div align="center">
     <img src="https://github.com/user-attachments/assets/69737444-2fe6-487f-a389-f34cbabcdc88" width="45%" />
     <img src="https://github.com/user-attachments/assets/54605dc6-fb38-4d14-873c-e79f904d693d" width="45%" />
 </div>
 
-| Global Batch Size | BERT   | ModernBERT |
-|-------------------|:------:|:----------:|
-| 64                | **82.90%** | 89.82%     |
-| 256               | 74.86% | 90.54%     |
-| 1024              | 49.50% | **91.02%**     |
+| Batch Size | BERT   | ModernBERT |
+|------------|:------:|:----------:|
+| 64         | 84.06% | 89.82%     |
+| 256        | 86.66% | 90.54%     |
+| 1024       | **88.02%** | **91.02%**     |
 
+- Batch size가 증가할수록 두 모델 모두 성능이 향상됨
+- 64 → 1024로 증가 시
+  
+    - BERT: +3.96%p
+    - ModernBERT: +1.20%p
+- ModernBERT는 모든 배치 사이즈에서 BERT보다 높은 성능을 보임
 
 ## 2. HuggingFace Accelerate 기반 실험
 
 <div align="center">
-    <img src="https://github.com/user-attachments/assets/7dd1d762-bc6f-4a40-9d14-203c308d5e77" width="49%" />
-    <img src="https://github.com/user-attachments/assets/08d76809-55b6-4a52-a959-ac5ca417323a" width="41%" />
+    <img src="https://github.com/user-attachments/assets/83df3933-9ea9-42eb-9593-bc25c5c7569e" width="45%" />
+    <img src="https://github.com/user-attachments/assets/7917814b-5f32-48d4-93d9-c86814dfdab6" width="45%" />
 </div>
+
+- Batsch size가 64일 때 BERT의 결과를 예시로 첨부함
+- 나머지 설정에서도 torch와 accelerate의 결과가 완전히 일치함
+
+## 3. Learning Rate scaling 실험
+
+앞선 실험에서는 Global Batch Size를 64 → 256 → 1024로 증가시켰지만, learning rate는 5e-5로 고정하였다.
+
+하지만 batch size가 증가하면 gradient의 분산이 감소하는데, 동일한 learning rate를 유지하면 큰 배치는 상대적으로 보수적인 업데이트가 된다.
+
+즉, large batch가 충분히 학습 신호를 활용하지 못하게 되어 완전히 공정한 비교라고 보기 어렵다.
+
+따라서, Batch size 증가에 따라 learning rate도 함께 조정하는 것이 더 공정한 비교에 가깝다.
+
+### Linear Learning Rate Scaling Rule
+본 실험에서는 다음과 같은 sqrt scaling rule을 적용하였다.
+
+$$ \text{LR}_\text{new} = \text{LR}_\text{base} × \sqrt{\dfrac{\text{Global Batch Size}}{64}} $$
+
+| Batch Size | Learning Rate |
+| ---------- | ------------- |
+| 64         | 5e-5          |
+| 256        | 1e-4          |
+| 1024       | 2e-4          |
 
