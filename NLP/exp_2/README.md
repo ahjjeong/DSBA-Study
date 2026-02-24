@@ -226,9 +226,15 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 
 $$ \text{LR}_\text{new} = \text{LR}_\text{base} × \dfrac{\text{B}_\text{new}}{\text{B}_\text{base}} $$
 
-| Batch Size | Learning Rate |
-| ---------- | ------------- |
-| 64         | 5e-5          |
-| 256        | 2e-4          |
-| 1024       | 8e-4          |
+| Batch Size | Learning Rate | BERT    | ModernBERT       |
+|------------|--------------|----------|----------------|
+| 64         | 5e-5         | XX.XX%    | XX.XX%          |
+| 256        | 2e-4         | XX.XX%    | XX.XX%          |
+| 1024       | 8e-4         | XX.XX%    | XX.XX%          |
 
+
+- Large batch + 고정 LR → 보수적인 업데이트 → 안정적 수렴
+
+- Large batch + 선형 LR 증가 → 업데이트 크기 과도 → 일반화 저하
+
+> Batch size 증가가 항상 성능 향상으로 이어지는 것은 아니며, learning rate와의 상호작용을 함께 고려해야 한다.
