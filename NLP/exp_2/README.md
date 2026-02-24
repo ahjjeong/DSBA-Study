@@ -147,7 +147,7 @@ with accelerator.accumulate(model):
     optimizer.zero_grad()
 ```
 
-- accelerator.accumulate(model)가 누적 구간을 관리
+- ```accelerator.accumulate(model)```가 누적 구간을 관리
 
 ## Metrics
 
