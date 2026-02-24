@@ -55,13 +55,13 @@ wandb login [API_KEY]
 
 ### 2. 실험 실행
 
-- Torch 기반 batch size 실험
+- **Torch 기반 batch size 실험**
 
 ```
 bash scripts/run_torch.sh
 ```
 
-- HuggingFace Accelerate 기반 batch size 실험
+- **HuggingFace Accelerate 기반 batch size 실험**
 
 ```
 bash scripts/run_accelerate.sh
@@ -98,9 +98,9 @@ bash scripts/run_accelerate.sh
 
 ### Batch Size 설정
 
-Per-device batch size는 16으로 고정하고,
+Per-device batch size는 **16**으로 고정하고,
 
-| Global Batch Size | Grad Accum Steps |
+| Batch Size | Grad Accum Steps |
 | ----------------- | ---------------- |
 | 64                | 4                |
 | 256               | 16               |
