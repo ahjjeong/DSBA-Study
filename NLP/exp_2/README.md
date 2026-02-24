@@ -226,7 +226,7 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 
 본 실험에서는 다음과 같은 sqrt scaling rule을 적용하였다.
 
-$$ \text{LR}_\text{new} = \text{LR}_\text{base} × \sqrt{\dfrac{\text{Global Batch Size}}{64}} $$
+$$ \text{LR}_\text{new} = \text{LR}_\text{base} × \sqrt{\dfrac{\text{B}_\text{new}}{\text{B}_\text{base}}} $$
 
 | Batch Size | Learning Rate |
 | ---------- | ------------- |
