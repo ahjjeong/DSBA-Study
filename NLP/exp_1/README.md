@@ -132,27 +132,15 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 
 ## Experiments
 
-### Loss
-<div align="center">
-    <img src="https://github.com/user-attachments/assets/a0160e12-6008-412f-a12e-333266f450d5" width="92%" />
-</div>
-
-<div align="center">
-    <img src="https://github.com/user-attachments/assets/69a09ec4-4fe9-4b89-89c4-cc937ea2b386" width="45%" />
-    <img src="https://github.com/user-attachments/assets/ac412801-0503-4f19-b03c-f1fc4c44f0d9" width="45%" />
-</div>
-
-<br/>
-
 ### Accuracy
 
 <div align="center">
-    <img src="https://github.com/user-attachments/assets/4aac937d-6aa9-4700-8f1a-de9bf3942403" width="92%" />
+    <img src="https://github.com/user-attachments/assets/a6050d38-8ac9-4363-8ad1-55af55b69579" width="92%" />
 </div>
 
 <div align="center">
-    <img src="https://github.com/user-attachments/assets/e417bc9b-fa3f-460f-aee0-7bf9a6e84e44" width="45%" />
-    <img src="https://github.com/user-attachments/assets/35c2cf4a-9c08-45e2-8052-dd131f561679" width="45%" />
+    <img src="https://github.com/user-attachments/assets/38564deb-dd75-4119-ae30-5003a576f846" width="45%" />
+    <img src="https://github.com/user-attachments/assets/48a58104-2605-486c-9697-b96fbc6e662d" width="45%" />
 </div>
 
 <br/>
@@ -188,12 +176,12 @@ validation 성능이 가장 우수한 checkpoint를 기준으로 test 성능을 
 
 **[ Validation / Test ]**
 
-| Model      | Validation Acc | Test Acc |
+| Model      | Best Validation Acc | Test Acc |
 | :----------: | :--------------: | :--------: |
-| BERT-base  | 82.18%         | 81.46%   |
-| ModernBERT | 88.84%         | 83.92%   |
+| BERT-base  | 82.18%         | 81.36%   |
+| ModernBERT | 88.84%         | 88.26%   |
 
-> **ModernBERT는 Validation에서 +6.66%p, Test에서 +2.46%p**
+> **ModernBERT는 Validation에서 +6.66%p, Test에서 +6.90%p**
 
 
 ---
@@ -205,7 +193,7 @@ BERT-base-uncased와 ModernBERT-base를 동일한 학습 설정과 분류 구조
 
 실험 결과, **ModernBERT**는 step-level과 epoch-level 모두에서 더 **안정적인 학습 양상**을 보였으며,
 Validation 및 Test 성능에서도 BERT-base 대비 일관되게 우수한 결과를 기록하였다.
-특히 Validation Accuracy에서 **+6.66%p**, Test Accuracy에서 **+2.46%p**의 개선이 관찰되었다.
+특히 Validation Accuracy에서 **+6.66%p**, Test Accuracy에서 **+6.90%p**의 개선이 관찰되었다.
 
 이러한 결과는 ModernBERT가 Transformer encoder 구조 자체를 변경하지 않고도,
 **사전학습 목표 단순화**(**NSP 제거**)와 **실행 및 연산 최적화**를 통해
