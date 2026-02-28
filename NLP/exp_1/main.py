@@ -145,6 +145,10 @@ def main(configs: omegaconf.DictConfig):
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), os.path.join(os.getcwd(), "best.pt"))
+    
+    # best 모델 로드
+    best_path = os.path.join(os.getcwd(), "best.pt")
+    model.load_state_dict(torch.load(best_path, map_location=device))
 
     # final test
     test_loss_sum, test_acc_sum, n_test = 0.0, 0.0, 0
