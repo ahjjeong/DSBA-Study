@@ -47,6 +47,8 @@ ETT (Electricity Transformer Temperature) 벤치마크 데이터셋을 사용하
 - Batch size: 32
 - Loss: MSE
 
+그 외 세부적인 하이퍼파라미터 및 실험 설정은 iTransformer 논문 저자들이 공개한 공식 GitHub의 run.py 파일을 참고하여 동일하게 적용하였다.
+
 ### Results
 
 **[ ETTh1 ]**
