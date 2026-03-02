@@ -1,0 +1,52 @@
+DEFAULT:
+  exp_name: forecasting 
+  seed: 42
+
+DATASET:
+  datadir: ../dataset
+  dataname: ETTh1
+  scaler: standard
+  batch_size: 32
+  shuffle: True
+  num_workers: 0
+  pin_memory: True
+  drop_last: True
+  seq_len: 96
+  label_len: 0  # iTransformer에서는 label_len이 필요없음
+  pred_len: 96
+  del_feature: null
+
+TRAIN:
+  epoch: 10
+  ckp_metric: loss
+  eval_epochs: 1
+  log_epochs: 1
+  log_eval_iter: 100
+  early_stopping_count: 5
+  resume: null
+  pre_training: False
+  data_num: 0
+  fine_tuning_method: full
+  grad_accum_steps: 1
+  mixed_precision: 'no'
+  early_stopping_metric: loss
+  lradj: 'type1'
+  return_output: False
+  del_pt_file: True
+  wandb: 
+    use: True
+    iter: 50
+    exp_name: iTransformer
+    project_name: TS_forecasting
+    mode: online
+LOSS:
+  loss_name: mse
+
+OPTIMIZER:
+  opt_name: adam
+  lr: 0.0001
+  params:
+    weight_decay: 0.0
+
+RESULT:
+  savedir: './saved_model'
