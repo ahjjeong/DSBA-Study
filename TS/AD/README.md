@@ -43,23 +43,6 @@ PSM (Pooled Server Metrics) 데이터셋을 사용하였다.
    - `loss2 = rec_loss + k * prior_loss` (prior가 series에서 멀어지도록)
 3. **Anomaly Score**: `softmax(-(series_loss + prior_loss)) * reconstruction_loss`
 
-**[ 코드 ]**
-
-```python
-class AnomalyAttention(nn.Module):
-    def forward(self, queries, keys, values, sigma, attn_mask):
-        # Attention series: softmax(Q @ K^T / sqrt(d))
-        scores = torch.einsum("blhe,bshe->bhls", queries, keys)
-        series = self.dropout(torch.softmax(scale * scores, dim=-1))
-
-        # Gaussian prior: learnable sigma로 parameterize
-        sigma = torch.sigmoid(sigma * 5) + 1e-5
-        sigma = torch.pow(3, sigma) - 1
-        prior = 1.0 / (sqrt(2π) * σ) * exp(-distance² / 2σ²)
-
-        return V, series, prior, sigma
-```
-
 ---
 
 ## Experiments
@@ -101,29 +84,11 @@ class AnomalyAttention(nn.Module):
 
 ### Results
 
-| Metric    | 논문 (PSM) |
-| --------- | --------- |
-| Accuracy  | 98.25%    |
-| Precision | 98.10%    |
-| Recall    | 97.87%    |
-| F-score   | 97.83%    |
+| Metric    | 논문 (PSM) | 구현 결과 |
+| --------- | ---------- | --------- |
+| Accuracy  | 98.25%     | 98.65%    |
+| Precision | 98.10%     | 97.13%    |
+| Recall    | 97.87%     | 98.04%    |
+| F1-score  | 97.83%     | 97.58%    |
 
-> 실험 결과는 추후 업데이트 예정
-
-### Analysis
-
-**1. Association Discrepancy의 효과**
-
-- 정상 데이터: attention series가 Gaussian prior와 유사한 분포 → 낮은 discrepancy
-- 이상 데이터: attention series가 prior에서 벗어남 → 높은 discrepancy
-- Minimax strategy가 이 차이를 극대화하여 이상 탐지 성능 향상
-
-**2. Anomaly Score 구성**
-
-- Reconstruction loss만 사용할 경우 이상 탐지 성능이 제한적
-- Association discrepancy (metric)와 reconstruction loss를 결합하여 보다 robust한 anomaly score 산출
-
-**3. Detection Adjustment**
-
-- Point-level 예측을 segment-level로 보정하여 실용적인 이상 탐지 성능 확보
-- 이상 구간 내 하나라도 탐지되면 해당 구간 전체를 이상으로 판정
+> 구현 결과는 논문 reported 성능과 매우 근접한 수치를 보였다.
