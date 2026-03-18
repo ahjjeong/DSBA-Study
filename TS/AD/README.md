@@ -1,4 +1,4 @@
-# Time-series Anomaly Detection
+# Time-series Anomaly Detection with Anomaly Transformer
 
 본 프로젝트는 Anomaly Transformer 모델을 활용하여 시계열 이상탐지(Time Series Anomaly Detection) 실험을 수행하고, PSM 벤치마크 데이터셋에서의 성능을 재현하는 것을 목표로 한다.
 
