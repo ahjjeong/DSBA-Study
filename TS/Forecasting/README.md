@@ -140,4 +140,8 @@ class DataEmbedding_inverted(nn.Module):
   - ETTm2: 18.53% → 41.12% (+22.59%p)
 - ETTm2가 장기 예측에서 가장 큰 성능 저하(+22.59%p) 를 보임
   - 단기 예측(96-step)에서는 가장 낮은 오차(18.53%)로 가장 우수한 성능
+<<<<<<< Updated upstream
   - 하지만 720-step 장기 예측에서는 오차 증가폭이 가장 큼
+=======
+  - 하지만 720-step 장기 예측에서는 오차 증가폭이 가장 큼
+>>>>>>> Stashed changes
