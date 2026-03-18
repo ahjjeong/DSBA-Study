@@ -1,4 +1,4 @@
-# DSBA Time-series pretraining: Forecasting + RevIN
+# Applying RevIN to Time-series Forecasting with iTransformer
 
 본 프로젝트는 `TS/Forecasting`의 iTransformer 모델에 **RevIN(Reversible Instance Normalization)** 레이어를 적용하여, 시계열 데이터의 distribution shift 완화 및 학습 안정성 향상 효과를 실험적으로 분석하는 것을 목표로 한다.
 
