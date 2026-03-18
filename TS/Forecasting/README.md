@@ -1,4 +1,4 @@
-# DSBA Time-series pretraining: Forecasting
+# Time-series Forecasting with iTransformer
 
 본 프로젝트는 iTransformer 모델을 활용하여 장기 시계열 예측(Long-term Time Series Forecasting) 실험을 수행하고, ETT 벤치마크 데이터셋에서의 성능을 재현하는 것을 목표로 한다.
 
