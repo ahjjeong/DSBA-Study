@@ -1,24 +1,27 @@
 # DSBA Time-series pretraining: Forecasting + RevIN
 
-본 프로젝트는 `TS/Forecasting`의 iTransformer 모델에 **RevIN(Reversible Instance Normalization)** 레이어를 적용하여, 기존 정규화 방식 대비 성능 변화를 비교 분석하는 실습이다.
+본 프로젝트는 `TS/Forecasting`의 iTransformer 모델에 **RevIN(Reversible Instance Normalization)** 레이어를 적용하여, 시계열 데이터의 distribution shift 완화 및 학습 안정성 향상 효과를 실험적으로 분석하는 것을 목표로 한다.
 
 ---
 
 ## RevIN (Reversible Instance Normalization)
 
-RevIN은 시계열 데이터의 분포 변화(distribution shift) 문제를 완화하기 위한 정규화 기법이다. 핵심 아이디어는 모델 입력 시 instance-wise normalization을 수행하고, 출력 시 이를 역변환(denormalization)하여 원래 분포로 복원하는 것이다.
+RevIN은 시계열 데이터에서 시간에 따라 변화하는 평균과 분산(즉, distribution shift) 문제를 완화하기 위한 정규화 기법이다.
 
-### 기존 방식 vs RevIN
+기존의 global normalization 방식은 전체 데이터의 통계량을 기준으로 정규화를 수행하기 때문에, 시간에 따라 분포가 변하는 non-stationary 시계열에서는 효과적으로 작동하지 않을 수 있다.
 
-| 구분 | 기존 (Non-stationary Transformer) | RevIN |
-| --- | --- | --- |
-| 정규화 | 수동 mean/stdev 계산 후 차감·나눗셈 | Instance Normalization (mean/stdev) |
-| 역정규화 | 저장된 mean/stdev로 수동 복원 | 저장된 통계량 + affine 역변환 |
-| 학습 파라미터 | 없음 | affine_weight, affine_bias (learnable) |
+RevIN은 이러한 문제를 해결하기 위해 다음과 같은 구조를 가진다:
+
+- 입력 시 instance-wise normalization 수행
+- 모델 출력 시 denormalization (역변환)을 통해 원래 scale 복원
+- 추가적으로 learnable affine parameter (γ, β)를 통해 정규화 강도를 조절
+
+즉, RevIN은 정보 손실 없이 정규화를 수행하는 reversible normalization 구조를 가진다.
+
 
 ### 적용 위치
 
-[iTransformer.py](src/models/iTransformer.py) 의 `forecast()` 메서드에서 기존 수동 정규화를 RevIN 레이어로 교체하였다.
+`iTransformer.py`의 `forecast()` 메서드에서 기존 수동 정규화를 RevIN 레이어로 교체하였다.
 
 ```python
 from layers.RevIN import RevIN
@@ -107,33 +110,20 @@ ETT (Electricity Transformer Temperature) 벤치마크 데이터셋을 사용하
 
 ### Analysis
 
-**1. RevIN은 전반적으로 성능을 개선하며, 성능 저하는 없다**
+**1. RevIN은 “안정적이지만 제한적인 개선”을 보인다**
 
-- 16개 실험 조합 중 MSE 기준 11개에서 개선, 5개에서 동일, 악화된 케이스는 없음
-- 전체 평균 MSE 0.13%p, MAE 0.10%p 개선
+- 16개 실험 중 MSE 기준 11개에서 개선, 5개에서 동일
+- 평균적으로 MSE 0.13%p, MAE 0.10%p 감소
+- 그러나 개선 폭이 작아 **유의미한 성능 향상으로 보기는 어려움**
 
-**2. 장기 예측에서 더 큰 효과를 보인다 (ETTh1)**
+**2. RevIN은 성능 향상보다 “stabilization” 역할에 가깝다**
 
-- ETTh1에서 pred_len이 길어질수록 RevIN의 개선 폭이 증가:
-  - 96-step: 동일 (0.00%p)
-  - 192-step: -0.02%p
-  - 336-step: **-0.36%p**
-  - 720-step: **-0.83%p**
-- 장기 예측일수록 분포 변화(distribution shift)가 커지므로, RevIN의 instance normalization이 더 효과적으로 작용
+- 대부분의 실험에서 성능이 개선되거나 동일하게 유지됨
+- 성능 저하가 발생하지 않는다는 점에서 → regularization-like 안정화 효과를 가짐
+- 이는 RevIN의 본래 목적(= distribution shift 완화)과 일치
 
-**3. 단기 예측에서는 ETTm1에서 가장 큰 개선**
+**3. 결론**
 
-- ETTm1 96-step에서 MSE 34.41% → 34.12% (-0.29%p)로 가장 큰 단기 예측 개선
-- 15분 단위 고주파 데이터에서 instance-level 정규화가 분포 안정화에 기여
-
-**4. RevIN의 learnable affine parameter의 역할**
-
-- 기존 Non-stationary Transformer의 정규화는 단순 통계적 변환에 불과
-- RevIN은 학습 가능한 `affine_weight`, `affine_bias`를 통해 정규화 강도를 데이터에 맞게 조절
-- 이로 인해 성능이 악화되는 케이스 없이 안정적으로 개선 효과를 제공
-
-**5. 결론**
-
-- RevIN은 iTransformer에 **최소한의 코드 변경**으로 적용 가능하며, **성능 저하 없이 일관된 개선**을 제공한다
-- 특히 장기 예측(720-step)과 분포 변동이 큰 데이터셋에서 효과가 두드러진다
-- 추가 학습 파라미터(affine)가 매우 적어 계산 비용 증가 없이 적용 가능하다
+- RevIN은 iTransformer에 간단한 구조 변경만으로 적용 가능
+- 성능을 크게 향상시키지는 않지만, 전반적으로 안정적인 성능 유지 및 소폭 개선 효과를 보임
+- 특히 distribution shift가 존재하는 시계열에서 robustness를 향상시키는 normalization 기법으로 해석할 수 있음
